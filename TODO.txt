@@ -1,0 +1,106 @@
+Options of streplace 0.9: (only a subset of these will be implemented)
+
+or:    streplace [OPTIONS and RULES] -       (read from stdin/write to stdout)
+
+file options:
+-r --recursive        recurse directories
+-l --follow-links     follow symbolic links
+-o --only=LIST        process only files with extension in comma separated LIST
+                      (multiple allowed)
+-H --html-only        same as -o "html,htm,shtml,dhtml"
+-C --c-only           same as -o "c,cc,C,cxx,cpp,h,hh,H,hxx,hpp,i,inc,m,mm,M"
+-E --ignore-errors    skip files/directories that cant be read/written/renamed
+
+matching options:
+
+-I --preserve-case    try to preserve case in replacements
+   --lower-case       lower replacements
+   --upper-case       upper replacements
+   --capitalize-case  capitalize replacements
+-n --match-newline    match any character operators also match newline char
+   --select-lines=R   split file into lines and replace only in lines matching
+                      regex R
+   --ignore-lines=R   split file into lines and replace only in lines not
+                      matching matching regex R
+   --const-length     make sure that the left and the right side of each rule
+                      have the same length (only if -x, useful with binary
+                      files)
+   --try-all-pos      write N files nnn_hexpos_FILE if there are N locations
+                      for a pattern (only if -x\, useful for patching binaries)
+
+backup options:
+-b --backup           make backup before a file is modified if no backup exists
+-S --suffix=SUF       set the backup suffix to SUF (default=".~sub~")
+   --restore          restore all files from their backups (==> undo all
+                      changes), specify the files to be restored
+
+renaming options: (restore cant unrename)
+-A --rename           rules work also on names: rename files and directories
+-N --rename-only      same as --rename, but do not modify files contents
+   --across-dirs      for -A and -N: rules work on the whole path possibly
+                      moving the file across directories up and down the
+                      hierachy (i.e. slash is a normal character which can be
+                      replaced by anything, the resulting path is the new
+                      filename)
+-f --force            replace existing files during rename, use with caution
+-s --modify-symlinks  rules work only on the contents of symlinks (not their
+                      name), all other files and their contents are ignored
+-t --shorten=N        for -N and -A: shorten filenames to a maximum of N
+                      characters while keeping the extension by using certain
+                      heuristics after replacing (range=[0..])
+   --sane-filename    strip all kinds of illegal chars from filenames but allow
+                      spaces (useful with -N)
+   --sane-filename2   strip all kinds of illegal chars from filenames including
+                      spaces (useful with -N)
+-R --resolve-clash    resolve nameclashes by prepending N_ before the new
+                      filename where N makes the filename unique
+   --norm-ext-dos     normalize certain extensions like jpeg -> jpg, mpeg ->
+                      mpg to 3 characters
+   --norm-ext         normalize certain extensions like jpg -> jpeg, MPEG3 ->
+                      mp3 with canonical length
+   --assume-cifs      assume case-insensitive filesystem (default on Apple
+                      systems)
+   --assume-csfs      assume case-sensitive filesystem (default on non-Apple
+                      systems)
+
+special options:
+   --ignfilepat=P     ignore files in which pattern P is found (multiple
+                      allowed)
+   --ignfilepat-nore  match ignore pattern as a simple string, not as a regexp
+-M --max-filesize=N   skip files which are larger than N megabytes (default 0 =
+                      unlimited) (range=[0..])
+-U --dos-to-unix      convert all files which *only* contain DOS line
+                      termination to unix line termination, works also on
+                      binary files and is very robust
+-u --dos-to-unix2     convert all DOS line termination to unix line termination
+                      (for files which partly contain DOS line termination)
+
+color configuration:
+   --color-bold=SEQ   escape sequence used to switch terminal to bold mode
+                      (default="\33[01m")
+   --color-thin=SEQ   escape sequence used to switch terminal to thin mode
+                      (default="\33[07m")
+   --color-nor=SEQ    escape sequence used to switch terminal back to normal
+                      mode (default="\33[00m")
+-Q --no-color         do *not* colorize output with ansi sequences
+   --bold             do not use colors, but use bold and reverse to hilite
+                      text
+   --bcolor           use colors which are useful on a bright terminal
+                      background
+   --dcolor           use colors which are useful on a dark terminal background
+   --save-colors      save colors to config file ~/.streplacerc
+
+common options:
+-q --quiet            quiet execution
+-P --progress=NUM     progress indicator, useful with large files, print a '.'
+                      per NUM replacements (range=[0..])
+-h --help             print this help message, then exit successfully (only
+                      command line)
+   --version          print version, then exit successfully (only command line)
+
+config file options:
+   --verbose-config   print all options, values and where they were specified,
+                      then exit (only command line)
+   --rc-file=FILE     use FILE as rcfile (only command line)
+   --create-rc=FILE   create a FILE with default values for all options (only
+                      command line)
