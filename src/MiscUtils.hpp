@@ -7,162 +7,153 @@
 #ifndef include_MiscUtils_hpp
 #define include_MiscUtils_hpp
 
-#include <sstream>
-#include <fstream>
-#include <vector>
-#include <string>
 #include <cctype>
+#include <fstream>
 #include <regex>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace ut1
 {
 
+   // --- String utilities: Operations on one string. ---
 
-// --- String utilities: Operations on one string. ---
+   /// Has prefix.
+   bool hasPrefix( const std::string& s, const std::string& prefix );
 
-/// Has prefix.
-bool hasPrefix(const std::string& s, const std::string& prefix);
+   /// Has suffix.
+   bool hasSuffix( const std::string& s, const std::string& suffix );
 
-/// Has suffix.
-bool hasSuffix(const std::string& s, const std::string& suffix);
+   /// Contains character.
+   bool contains( const std::string& s, char c );
 
-/// Contains character.
-bool contains(const std::string& s, char c);
+   /// Contains string.
+   bool contains( const std::string& haystack, const std::string& needle );
 
-/// Contains string.
-bool contains(const std::string& haystack, const std::string& needle);
+   /// Replace substring in place.
+   /// If from is empty, s is left unmodified.
+   void replaceStringInPlace( std::string& s, const std::string& from, const std::string& to );
 
-/// Replace substring in place.
-/// If from is empty, s is left unmodified.
-void replaceStringInPlace(std::string& s, const std::string& from, const std::string& to);
+   /// Replace substring.
+   /// If from is empty, s is left unmodified.
+   std::string replaceString( const std::string& s, const std::string& from, const std::string& to );
 
-/// Replace substring.
-/// If from is empty, s is left unmodified.
-std::string replaceString(const std::string& s, const std::string& from, const std::string& to);
+   /// Expand unprintable chars to C-style backslash sequences.
+   std::string expandUnprintable( const std::string& s, char quotes = 0, char addQuotes = 0 );
 
-/// Expand unprintable chars to C-style backslash sequences.
-std::string expandUnprintable(const std::string& s, char quotes = 0, char addQuotes = 0);
+   /// Compile C-style backslash sequences back to unprintable chars.
+   std::string compileCString( const std::string& s, std::string* errorMessageOut = nullptr );
 
-/// Compile C-style backslash sequences back to unprintable chars.
-std::string compileCString(const std::string& s, std::string *errorMessageOut = nullptr);
+   /// Skip whitespace (as in isspace()).
+   void skipSpace( const char*& s );
 
-/// Skip whitespace (as in isspace()).
-void skipSpace(const char *& s);
+   /// Convert to lowercase.
+   std::string tolower( std::string s );
 
-/// Convert to lowercase.
-std::string tolower(std::string s);
+   /// Convert to uppercase.
+   std::string toupper( std::string s );
 
-/// Convert to uppercase.
-std::string toupper(std::string s);
+   /// Capitalize (first char uppercase, rest lowercase).
+   std::string capitalize( std::string s );
 
-/// Capitalize (first char uppercase, rest lowercase).
-std::string capitalize(std::string s);
+   /// Add trailing LF if missing.
+   void addTrailingLfIfMissing( std::string& s );
 
-/// Add trailing LF if missing.
-void addTrailingLfIfMissing(std::string& s);
+   // --- String utilities: Misc. ---
 
-// --- String utilities: Misc. ---
+   /// Split string at separator chars.
+   /// An empty string returns an empty list.
+   std::vector< std::string > splitString( const std::string& s, char sep, int maxSplit = -1 );
 
-/// Split string at separator chars.
-/// An empty string returns an empty list.
-std::vector<std::string> splitString(const std::string& s, char sep, int maxSplit = -1);
+   /// Split text into lines at LF and optionally wrap text at wrapCol.
+   /// A trailing LF is ignored and does not result in an extra empty line at the end.
+   /// The input "a\n" and "a" both result in ["a"].
+   std::vector< std::string > splitLines( const std::string& s, size_t wrapCol = 0 );
 
-/// Split text into lines at LF and optionally wrap text at wrapCol.
-/// A trailing LF is ignored and does not result in an extra empty line at the end.
-/// The input "a\n" and "a" both result in ["a"].
-std::vector<std::string> splitLines(const std::string& s, size_t wrapCol = 0);
+   /// Join vector of strings.
+   std::string joinStrings( const std::vector< std::string >& stringList, const std::string& sep );
 
-/// Join vector of strings.
-std::string joinStrings(const std::vector<std::string>& stringList, const std::string& sep);
+   /// std::regex_replace() with a callback function instead of a format string.
+   template< typename FormatMatch >
+   std::string regex_replace( const std::string& s, const std::regex& re, FormatMatch f )
+   {
+      std::string r;
 
-/// std::regex_replace() with a callback function instead of a format string.
-template<typename FormatMatch>
-std::string regex_replace(const std::string& s, const std::regex& re, FormatMatch f)
-{
-    std::string r;
-    
-    size_t endOfMatch = 0;
-    std::sregex_iterator end;
-    for (std::sregex_iterator it(s.begin(), s.end(), re); it != end; it++)
-    {
-        r.append(it->prefix());
-        r.append(f(*it));
-        endOfMatch = it->position(0) + it->length(0);
-    }
-    
-    r.append(s.substr(endOfMatch));
-    
-    return r;
-}
+      size_t endOfMatch = 0;
+      std::sregex_iterator end;
+      for( std::sregex_iterator it( s.begin(), s.end(), re ); it != end; it++ ) {
+         r.append( it->prefix() );
+         r.append( f( *it ) );
+         endOfMatch = it->position( 0 ) + it->length( 0 );
+      }
 
+      r.append( s.substr( endOfMatch ) );
 
-// --- Printing ---
+      return r;
+   }
 
-/// Print vector<T>.
-template<typename T>
-std::ostream& operator<<(std::ostream& s, const std::vector<T>& v)
-{
-    s << "{";
-    bool first = true;
-    for(const auto& elem: v)
-    {
-        if (!first)
-        {
+   // --- Printing ---
+
+   /// Print vector<T>.
+   template< typename T >
+   std::ostream& operator<<( std::ostream& s, const std::vector< T >& v )
+   {
+      s << "{";
+      bool first = true;
+      for( const auto& elem : v ) {
+         if( !first ) {
             s << ", ";
-        }
-        else
-        {
+         }
+         else {
             first = false;
-        }
-        s << elem;
-    }
-    s << "}";
-    return s;
-}
+         }
+         s << elem;
+      }
+      s << "}";
+      return s;
+   }
 
-/// Print vector<string>.
-std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v);
+   /// Print vector<string>.
+   std::ostream& operator<<( std::ostream& s, const std::vector< std::string >& v );
 
-/// Safely convert to printable string.
-template<typename T>
-std::string toStr(const T& t)
-{
-    std::stringstream r;
-    r << t;
-    return r.str();    
-}
+   /// Safely convert to printable string.
+   template< typename T >
+   std::string toStr( const T& t )
+   {
+      std::stringstream r;
+      r << t;
+      return r.str();
+   }
 
-/// Convert std::string to a printable std::string.
-inline std::string toStr(const std::string& s)
-{
-    return expandUnprintable(s, '"', '"');
-}
+   /// Convert std::string to a printable std::string.
+   inline std::string toStr( const std::string& s )
+   {
+      return expandUnprintable( s, '"', '"' );
+   }
 
-/// Convert const char * to a printable std::string.
-inline std::string toStr(const char *s)
-{
-    return "(const char*)" + expandUnprintable(s, '"', '"');
-}
+   /// Convert const char * to a printable std::string.
+   inline std::string toStr( const char* s )
+   {
+      return "(const char*)" + expandUnprintable( s, '"', '"' );
+   }
 
-/// Flush output stream, but only if:
-/// 1. it is std::cout.
-/// 2. it is connected to a TTY.
-/// (Flushing stdout which is redirected to a file has a disasterous
-/// performance impact. Use this to suppress flushes whiuch are just
-/// inserted to progress output to the same line.)
-std::ostream& flushTty(std::ostream& os);
+   /// Flush output stream, but only if:
+   /// 1. it is std::cout.
+   /// 2. it is connected to a TTY.
+   /// (Flushing stdout which is redirected to a file has a disasterous
+   /// performance impact. Use this to suppress flushes whiuch are just
+   /// inserted to progress output to the same line.)
+   std::ostream& flushTty( std::ostream& os );
 
+   // --- File utilities. ---
 
-// --- File utilities. ---
+   /// Read string from file.
+   std::string readFile( const std::string& filename );
 
-/// Read string from file.
-std::string readFile(const std::string& filename);
+   /// Write string to file.
+   void writeFile( const std::string& filename, const std::string& data );
 
-/// Write string to file.
-void writeFile(const std::string& filename, const std::string& data);
+}  // namespace ut1
 
-
-} // namespace ut1
-    
 #endif /* include_MiscUtils_hpp */
-
