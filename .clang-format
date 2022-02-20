@@ -1,0 +1,25 @@
+---
+Language: Cpp
+Standard: c++17
+BasedOnStyle: WebKit
+BreakBeforeBraces: Allman
+SpaceBeforeRangeBasedForLoopColon: false
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+AlignConsecutiveMacros: true
+AlignTrailingComments: true
+AllowShortBlocksOnASingleLine: true
+AllowShortLambdasOnASingleLine: All
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+SpaceAfterTemplateKeyword: false
+IndentPPDirectives: AfterHash
+PPIndentWidth: 1
+ColumnLimit: 0
+ConstructorInitializerIndentWidth: 0
+MaxEmptyLinesToKeep: 2
+SortIncludes: false
+Cpp11BracedListStyle: true
+SpaceBeforeCpp11BracedList: false
+...

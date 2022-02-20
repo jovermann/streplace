@@ -15,8 +15,8 @@
 class EscapeSequences
 {
 public:
-    std::string bold = "\33[01m";
-    std::string thin = "\33[07m";
+    std::string bold   = "\33[01m";
+    std::string thin   = "\33[07m";
     std::string normal = "\33[00m";
 };
 
@@ -38,7 +38,7 @@ public:
 
     std::string lhs;
     std::string rhs;
-    uint64_t numMatches{};
+    uint64_t    numMatches{};
 };
 
 
@@ -61,22 +61,22 @@ public:
     Streplace(const ut1::CommandLineParser& cl)
     {
         // Get command line options.
-        recursive = cl("recursive");
+        recursive   = cl("recursive");
         followLinks = cl("follow-links");
-        all = cl("all");
+        all         = cl("all");
 
         ignoreCase = cl("ignore-case");
-        noRegex = cl("no-regex");
+        noRegex    = cl("no-regex");
         wholeWords = cl("whole-words");
 
         modifySymlinks = cl("modify-symlinks");
 
-        verbose = cl.getCount("verbose");
-        dummyMode = cl("dummy-mode");
-        dummyTrace = cl("dummy-trace");
-        dummyLineTrace = cl("dummy-linetrace");
+        verbose               = cl.getCount("verbose");
+        dummyMode             = cl("dummy-mode");
+        dummyTrace            = cl("dummy-trace");
+        dummyLineTrace        = cl("dummy-linetrace");
         dummyLineTraceHideSep = ut1::hasPrefix(cl.getStr("context"), "+");
-        context = cl.getUInt("context");
+        context               = cl.getUInt("context");
 
         // Implicit options.
         modifyFiles = !modifySymlinks;
@@ -342,7 +342,8 @@ private:
         }
         else
         {
-            s = ut1::regex_replace(s, std::regex(rule.lhs), [&](const std::smatch& match) { return replaceMatch(match, rule, numMatches); });
+            s = ut1::regex_replace(s, std::regex(rule.lhs), [&](const std::smatch& match)
+                { return replaceMatch(match, rule, numMatches); });
         }
 
         rule.numMatches += numMatches;
@@ -410,15 +411,15 @@ private:
     bool modifySymlinks{};
 
     unsigned verbose{};
-    bool dummyMode{};
-    bool dummyTrace{};
-    bool dummyLineTrace{};
-    bool dummyLineTraceHideSep{};
-    bool trace{};
-    size_t context{};
+    bool     dummyMode{};
+    bool     dummyTrace{};
+    bool     dummyLineTrace{};
+    bool     dummyLineTraceHideSep{};
+    bool     trace{};
+    size_t   context{};
 
-    bool modifyFiles{};
-    std::vector<Rule> rules;
+    bool                  modifyFiles{};
+    std::vector<Rule>     rules;
     std::regex::flag_type regexFlags{};
 
     /// Statistics.
@@ -432,29 +433,30 @@ private:
 };
 
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
     // Run unit tests and exit if enabled at compile time.
     UNIT_TEST_RUN();
 
     // Command line options.
     ut1::CommandLineParser cl("streplace", "Replace strings in files, filenames and symbolic links, in place, recursively.\n"
-                         "\n"
-                         "Usage: $programName [OPTIONS, FILES, DIRS and RULES] [--] [FILES and DIRS]\n"
-                         "\n"
-                         "This program substitutes strings in files, filenames and symbolic links according to rules:\n"
-                         "- A rule is of the from FOO=BAR which replaces FOO by BAR. FOO is a regular expression by default (unless -x is specified).\n"
-                         "- Use C escape sequences like \\n \\t \\xff. Use \\\\ to get a verbatim backslash. Note that you will need to protect backslashes from the shell by using single quotes or by duplicating backslashes.\n"
-                         "- Use \\= to get a verbatim =.\n"
-                     "- Use 'IMG([0-9]*).jpeg=pic$1.jpg' to reuse subexpressions of regular expressions ($& for the whole match, $n for subexpressions)."
-                         "\n",
-                         "\n"
-                         "$programName version $version *** Copyright (c) 2021-2022 Johannes Overmann *** https://github.com/jovermann/streplace", "0.10.1");
+                                           "\n"
+                                           "Usage: $programName [OPTIONS, FILES, DIRS and RULES] [--] [FILES and DIRS]\n"
+                                           "\n"
+                                           "This program substitutes strings in files, filenames and symbolic links according to rules:\n"
+                                           "- A rule is of the from FOO=BAR which replaces FOO by BAR. FOO is a regular expression by default (unless -x is specified).\n"
+                                           "- Use C escape sequences like \\n \\t \\xff. Use \\\\ to get a verbatim backslash. Note that you will need to protect backslashes from the shell by using single quotes or by duplicating backslashes.\n"
+                                           "- Use \\= to get a verbatim =.\n"
+                                           "- Use 'IMG([0-9]*).jpeg=pic$1.jpg' to reuse subexpressions of regular expressions ($& for the whole match, $n for subexpressions)."
+                                           "\n",
+        "\n"
+        "$programName version $version *** Copyright (c) 2021-2022 Johannes Overmann *** https://github.com/jovermann/streplace",
+        "0.10.1");
 
     cl.addHeader("\nFile options:\n");
     cl.addOption('r', "recursive", "Recursively process directories.");
     cl.addOption('l', "follow-links", "Follow symbolic links.");
-    cl.addOption(0,   "all", "Process all files and directories. By default '.git' directories are skipped.");
+    cl.addOption(0, "all", "Process all files and directories. By default '.git' directories are skipped.");
 
     cl.addHeader("\nMatching options:\n");
     cl.addOption('i', "ignore-case", "Ignore case.");
@@ -470,7 +472,7 @@ int main(int argc, char *argv[])
     cl.addOption('d', "dummy-mode", "Do not write/change anything.");
     cl.addOption('T', "dummy-trace", "Do not write/change anything, but print matching files to stdout and highlight replacements.");
     cl.addOption('L', "dummy-linetrace", "Do not write/change anything, but print matching lines of matching files to stdout and highlight replacements.");
-    cl.addOption(0,   "context", "set number of context lines for --dummy-linetrace to N (use +N to hide line separator) (range=[0..], default=1).", "N", "1");
+    cl.addOption(0, "context", "set number of context lines for --dummy-linetrace to N (use +N to hide line separator) (range=[0..], default=1).", "N", "1");
 
 
     // Parse command line options.
@@ -483,7 +485,7 @@ int main(int argc, char *argv[])
     {
         // Parse non-option arguments (paths and rules).
         std::vector<std::filesystem::directory_entry> paths;
-        bool allowRules = true;
+        bool                                          allowRules = true;
         for (const auto& arg: cl.getArgs())
         {
             if (allowRules && ut1::contains(arg, '='))
@@ -529,5 +531,3 @@ int main(int argc, char *argv[])
 
     return 0;
 }
-
-

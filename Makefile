@@ -39,7 +39,10 @@ unit_test: $(OBJECTS)
 
 test: unit_test
 
-.PHONY: clean default unit_test test
+format:
+	clang-format -i --style=file src/*.hpp src/*.cpp
+
+.PHONY: clean default unit_test test format
 
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(DEPENDS)

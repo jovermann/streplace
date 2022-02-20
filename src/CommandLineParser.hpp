@@ -30,7 +30,11 @@ public:
     struct Option
     {
         /// Make this option a list option.
-        Option& listOption() { isList = true; return *this; }
+        Option& listOption()
+        {
+            isList = true;
+            return *this;
+        }
 
         /// Has formal argument.
         bool hasArg() const { return !argName.empty(); }
@@ -42,12 +46,12 @@ public:
         size_t getHelpNameLen() const;
 
         /// Meta info (initialized by addOption()).
-        char shortOption{};
+        char        shortOption{};
         std::string longOption;
         std::string help;
         std::string argName;
         std::string defaultValue;
-        bool isList{};
+        bool        isList{};
 
         /// Actual value.
         std::string value;
@@ -69,7 +73,7 @@ public:
     /// Parse command line.
     /// By default parse() does not return for --help/--version or on errors.
     /// Return 0 on success.
-    void parse(int argc, char *argv[]);
+    void parse(int argc, char* argv[]);
 
     /// Get switch value.
     bool operator()(const std::string& longOption) const { return isSet(longOption); }
@@ -81,7 +85,7 @@ public:
     unsigned getCount(const std::string& longOption) const;
 
     /// Get string value.
-    const std::string &getStr(const std::string& longOption) const;
+    const std::string& getStr(const std::string& longOption) const;
 
     /// Get string list;
     std::vector<std::string> getList(const std::string& longOption);
@@ -122,13 +126,13 @@ private:
     Option* getShortOption(char shortOption);
 
     /// Parse long option in argv[i], potentially consuming an argument in argv[++i].
-    void parseLongOption(int argc, char *argv[], int& i);
+    void parseLongOption(int argc, char* argv[], int& i);
 
     /// Parse short options in argv[i], potentially consuming an argument in argv[++i].
-    void parseShortOptions(int argc, char *argv[], int& i);
+    void parseShortOptions(int argc, char* argv[], int& i);
 
     /// Options.
-    std::map<std::string,Option> options;
+    std::map<std::string, Option> options;
 
     /// List of options in the order they were declared using addOption()
     /// and in the order they will appear in --help.
@@ -159,4 +163,3 @@ private:
 
 
 #endif /* include_CommandLineParser_hpp */
-

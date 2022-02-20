@@ -6,12 +6,12 @@
 
 #ifdef ENABLE_UNIT_TEST
 
-#include <iostream>
-#include "UnitTest.hpp"
+# include <iostream>
+# include "UnitTest.hpp"
 
-UnitTestRegistry *unitTestRegistry{};
+UnitTestRegistry* unitTestRegistry{};
 
-UnitTestRegistry *getUnitTestRegistry()
+UnitTestRegistry* getUnitTestRegistry()
 {
     if (unitTestRegistry == nullptr)
     {
@@ -21,7 +21,7 @@ UnitTestRegistry *getUnitTestRegistry()
 }
 
 
-void UnitTestRegistry::registerTest(UnitTest *test)
+void UnitTestRegistry::registerTest(UnitTest* test)
 {
     assert(test);
     const auto it = getUnitTestRegistry()->tests.find(test->testName);
@@ -38,13 +38,13 @@ void UnitTestRegistry::registerTest(UnitTest *test)
 int UnitTestRegistry::runTests()
 {
     size_t maxNameLen = 0;
-    for (const auto & kv: getUnitTestRegistry()->tests)
+    for (const auto& kv: getUnitTestRegistry()->tests)
     {
         maxNameLen = std::max(maxNameLen, kv.second->getTestName().length());
     }
 
     size_t numTests = 0;
-    for (const auto & kv: getUnitTestRegistry()->tests)
+    for (const auto& kv: getUnitTestRegistry()->tests)
     {
         std::cout << "Test " << kv.second->getTestName() << std::string(maxNameLen - kv.second->getTestName().length() + 1, ' ');
         kv.second->run();
@@ -66,7 +66,7 @@ UnitTest::~UnitTest()
 // We do not want to declare this "noreturn" because we want to suppress the
 // "unreachable-code" warning in main() without suppressing this rather useful
 // warning globally.
-#pragma GCC diagnostic ignored "-Wmissing-noreturn"
+# pragma GCC diagnostic ignored "-Wmissing-noreturn"
 void UNIT_TEST_RUN()
 {
     UnitTestRegistry::runTests();

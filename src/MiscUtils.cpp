@@ -84,9 +84,9 @@ UNIT_TEST(containsStr)
 
 void replaceStringInPlace(std::string& s, const std::string& from, const std::string& to)
 {
-    if(!from.empty())
+    if (!from.empty())
     {
-        for(size_t pos = 0;; pos += to.size())
+        for (size_t pos = 0;; pos += to.size())
         {
             pos = s.find(from, pos);
             if (pos == std::string::npos)
@@ -122,18 +122,18 @@ UNIT_TEST(replaceString)
 std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
 {
     std::string r;
-    char buf[4];
+    char        buf[4];
 
     if (addQuotes)
     {
         r += addQuotes;
     }
 
-    for(const char& c: s)
+    for (const char& c: s)
     {
-        if(isprint(unsigned(c)))
+        if (isprint(unsigned(c)))
         {
-            if((c =='\\') || (quotes && (c == quotes)))
+            if ((c == '\\') || (quotes && (c == quotes)))
             {
                 // Backslashify backslash and quotes.
                 r += '\\';
@@ -193,13 +193,13 @@ UNIT_TEST(expandUnprintable)
 }
 
 
-std::string compileCString(const std::string& s, std::string *errorMessageOut)
+std::string compileCString(const std::string& s, std::string* errorMessageOut)
 {
     std::string r;
-    const char *p = s.c_str();
-    const char *end;
-    char c;
-    char buf[4];
+    const char* p = s.c_str();
+    const char* end;
+    char        c;
+    char        buf[4];
 
     if (errorMessageOut)
     {
@@ -230,7 +230,9 @@ std::string compileCString(const std::string& s, std::string *errorMessageOut)
             case 'n': c = '\n'; break;
             case 'r': c = '\r'; break;
             case 't': c = '\t'; break;
-            case 'v': c = '\v'; break;
+            case 'v':
+                c = '\v';
+                break;
 
                 // Hex.
             case 'x':
@@ -263,7 +265,7 @@ std::string compileCString(const std::string& s, std::string *errorMessageOut)
                 buf[1] = p[0];
                 buf[2] = p[0] ? p[1] : 0;
                 buf[3] = 0;
-                c = strtoul(buf, const_cast<char**>(&end), 8);
+                c      = strtoul(buf, const_cast<char**>(&end), 8);
                 p += end - buf - 1;
                 break;
 
@@ -320,8 +322,8 @@ std::vector<std::string> splitString(const std::string& s, char sep, int maxSpli
     }
 
     std::istringstream iss(s + std::string(1, sep));
-    std::string elem;
-    for(; (maxSplit != 0) && std::getline(iss, elem, sep); maxSplit--)
+    std::string        elem;
+    for (; (maxSplit != 0) && std::getline(iss, elem, sep); maxSplit--)
     {
         r.push_back(elem);
     }
@@ -358,12 +360,12 @@ UNIT_TEST(splitString)
 std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
 {
     std::vector<std::string> r;
-    size_t start = 0;
-    size_t pos = 0;
-    size_t splitPos = 0;
-    size_t col = 0;
-    std::string indent;
-    bool firstPart = true; // First subline of a wrapped line.
+    size_t                   start    = 0;
+    size_t                   pos      = 0;
+    size_t                   splitPos = 0;
+    size_t                   col      = 0;
+    std::string              indent;
+    bool                     firstPart = true; // First subline of a wrapped line.
     while (pos < s.length())
     {
         if (s[pos] == '\n')
@@ -371,10 +373,10 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
             std::string line = s.substr(start, pos - start);
             r.push_back(indent + line);
             pos++;
-            start = pos;
-            splitPos = pos;
-            col = 0;
-            indent = "";
+            start     = pos;
+            splitPos  = pos;
+            col       = 0;
+            indent    = "";
             firstPart = true;
             continue;
         }
@@ -382,8 +384,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
         {
             splitPos = pos + 1;
         }
-        if ((wrapCol > 0) &&
-            (col == wrapCol))
+        if ((wrapCol > 0) && (col == wrapCol))
         {
             if (splitPos == start)
             {
@@ -391,13 +392,13 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
             }
             std::string line = s.substr(start, splitPos - start);
             r.push_back(indent + line);
-            pos = splitPos;
+            pos   = splitPos;
             start = pos;
-            col = indent.length();
+            col   = indent.length();
             if (firstPart)
             {
                 firstPart = false;
-                size_t i = 0;
+                size_t i  = 0;
                 while ((i < line.size()) && ((line[i] == ' ') || (line[i] == '-')))
                 {
                     i++;
@@ -456,23 +457,41 @@ UNIT_TEST(joinStrings)
 
 UNIT_TEST(regex_replace)
 {
-    ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return "(" + match[0].str() + ")"; }), "aa (XX) bb (YY) cc");
-    ASSERT_EQ(regex_replace("XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return "(" + match[0].str() + ")"; }), "(XX) bb (YY) cc");
-    ASSERT_EQ(regex_replace("aa XX bb YY", std::regex("[A-Z]+"), [&](const std::smatch& match) { return "(" + match[0].str() + ")"; }), "aa (XX) bb (YY)");
-    ASSERT_EQ(regex_replace("aa", std::regex("bb"), [&](const std::smatch& match) { return match[0].str(); }), "aa");
-    ASSERT_EQ(regex_replace("", std::regex("bb"), [&](const std::smatch& match) { return match[0].str(); }), "");
-    ASSERT_EQ(regex_replace("aa", std::regex("aa"), [&](const std::smatch& match) { return match[0].str(); }), "aa");
-    ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return tolower(match[0].str()); }), "aa xx bb yy cc");
-    ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return match.format("f($&)"); }), "aa f(XX) bb f(YY) cc");
-    ASSERT_EQ(regex_replace("aa XX.jpg bb YY.jpg cc", std::regex("([A-Z]+)[.]jpg"), [&](const std::smatch& match) { return match.format("pic_$1.png"); }), "aa pic_XX.png bb pic_YY.png cc");
+    ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match)
+                  { return "(" + match[0].str() + ")"; }),
+        "aa (XX) bb (YY) cc");
+    ASSERT_EQ(regex_replace("XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match)
+                  { return "(" + match[0].str() + ")"; }),
+        "(XX) bb (YY) cc");
+    ASSERT_EQ(regex_replace("aa XX bb YY", std::regex("[A-Z]+"), [&](const std::smatch& match)
+                  { return "(" + match[0].str() + ")"; }),
+        "aa (XX) bb (YY)");
+    ASSERT_EQ(regex_replace("aa", std::regex("bb"), [&](const std::smatch& match)
+                  { return match[0].str(); }),
+        "aa");
+    ASSERT_EQ(regex_replace("", std::regex("bb"), [&](const std::smatch& match)
+                  { return match[0].str(); }),
+        "");
+    ASSERT_EQ(regex_replace("aa", std::regex("aa"), [&](const std::smatch& match)
+                  { return match[0].str(); }),
+        "aa");
+    ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match)
+                  { return tolower(match[0].str()); }),
+        "aa xx bb yy cc");
+    ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match)
+                  { return match.format("f($&)"); }),
+        "aa f(XX) bb f(YY) cc");
+    ASSERT_EQ(regex_replace("aa XX.jpg bb YY.jpg cc", std::regex("([A-Z]+)[.]jpg"), [&](const std::smatch& match)
+                  { return match.format("pic_$1.png"); }),
+        "aa pic_XX.png bb pic_YY.png cc");
 }
 
 
-void skipSpace(const char *& s)
+void skipSpace(const char*& s)
 {
     if (s)
     {
-        while(isspace(uint8_t(*s)))
+        while (isspace(uint8_t(*s)))
         {
             s++;
         }
@@ -482,7 +501,7 @@ void skipSpace(const char *& s)
 
 UNIT_TEST(skipSpace)
 {
-    const char *p = " \t\n\ra \t";
+    const char* p = " \t\n\ra \t";
     skipSpace(p);
     ASSERT_EQ(*p, 'a');
 }
@@ -490,7 +509,8 @@ UNIT_TEST(skipSpace)
 
 std::string tolower(std::string s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c){ return std::tolower(c); });
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
+        { return std::tolower(c); });
     return s;
 }
 
@@ -505,7 +525,8 @@ UNIT_TEST(tolower)
 
 std::string toupper(std::string s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c){ return std::toupper(c); });
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
+        { return std::toupper(c); });
     return s;
 }
 
@@ -571,7 +592,7 @@ std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v)
 {
     s << "{";
     bool first = true;
-    for(const auto& elem: v)
+    for (const auto& elem: v)
     {
         if (!first)
         {
@@ -615,7 +636,7 @@ std::ostream& flushTty(std::ostream& os)
 std::string readFile(const std::string& filename)
 {
     std::ifstream is(filename, std::ios::in | std::ios::binary | std::ios::ate);
-    size_t size = is.tellg();
+    size_t        size = is.tellg();
     is.seekg(0, is.beg);
     std::string r(size, '\0');
     is.read(&r[0], size);
@@ -640,4 +661,3 @@ UNIT_TEST(readFile_WriteFile)
 
 
 } // namespace ut1
-

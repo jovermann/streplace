@@ -42,11 +42,14 @@ size_t CommandLineParser::Option::getHelpNameLen() const
 }
 
 
-CommandLineParser::CommandLineParser(const std::string& programName_, const std::string& usage_, const std::string& footer_, const std::string& version_):
-programName(programName_), usage(usage_), footer(footer_), version(version_)
+CommandLineParser::CommandLineParser(const std::string& programName_, const std::string& usage_, const std::string& footer_, const std::string& version_)
+: programName(programName_)
+, usage(usage_)
+, footer(footer_)
+, version(version_)
 {
     // Appear in --help in reverse order:
-    addOption(0,   "version", "Print version and exit.");
+    addOption(0, "version", "Print version and exit.");
     addOption('h', "help", "Print this help message and exit.");
 }
 
@@ -67,18 +70,18 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
     // Check for duplicate short option.
     if (shortOption)
     {
-        Option *existingOption = getShortOption(shortOption);
+        Option* existingOption = getShortOption(shortOption);
         if (existingOption)
             throw std::runtime_error("addOption(shortOption=" + std::string(1, shortOption) + "): option already exists\n");
     }
 
     Option opt;
-    opt.shortOption = shortOption;
-    opt.longOption = longOption;
-    opt.help = help;
-    opt.argName = argName;
+    opt.shortOption  = shortOption;
+    opt.longOption   = longOption;
+    opt.help         = help;
+    opt.argName      = argName;
     opt.defaultValue = defaultValue;
-    opt.value = defaultValue;
+    opt.value        = defaultValue;
 
     options[longOption] = opt;
     // Keep --help and --version at the end of the list.
@@ -87,7 +90,7 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
 }
 
 
-void CommandLineParser::parse(int argc, char *argv[])
+void CommandLineParser::parse(int argc, char* argv[])
 {
     // Parse arguments.
     for (int i = 1; i < argc; i++)
@@ -155,7 +158,7 @@ unsigned CommandLineParser::getCount(const std::string& longOption) const
 }
 
 
-const std::string &CommandLineParser::getStr(const std::string& longOption) const
+const std::string& CommandLineParser::getStr(const std::string& longOption) const
 {
     const Option* option = getOption(longOption);
     if (option)
@@ -178,8 +181,8 @@ std::vector<std::string> CommandLineParser::getList(const std::string& longOptio
 long long CommandLineParser::getInt(const std::string& longOption) const
 {
     std::string value = getStr(longOption);
-    const char *end = nullptr;
-    long long r = strtoll(value.c_str(), const_cast<char**>(&end), 0);
+    const char* end   = nullptr;
+    long long   r     = strtoll(value.c_str(), const_cast<char**>(&end), 0);
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {
@@ -191,9 +194,9 @@ long long CommandLineParser::getInt(const std::string& longOption) const
 
 unsigned long long CommandLineParser::getUInt(const std::string& longOption) const
 {
-    std::string value = getStr(longOption);
-    const char *end = nullptr;
-    unsigned long long r = strtoull(value.c_str(), const_cast<char**>(&end), 0);
+    std::string        value = getStr(longOption);
+    const char*        end   = nullptr;
+    unsigned long long r     = strtoull(value.c_str(), const_cast<char**>(&end), 0);
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {
@@ -206,8 +209,8 @@ unsigned long long CommandLineParser::getUInt(const std::string& longOption) con
 double CommandLineParser::getDouble(const std::string& longOption) const
 {
     std::string value = getStr(longOption);
-    const char *end = nullptr;
-    double r = strtod(value.c_str(), const_cast<char**>(&end));
+    const char* end   = nullptr;
+    double      r     = strtod(value.c_str(), const_cast<char**>(&end));
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {
@@ -232,7 +235,6 @@ void CommandLineParser::setValue(const std::string& longOption, const std::strin
     {
         throw std::runtime_error("Unknown option '" + longOption + "'!");
     }
-
 }
 
 
@@ -270,8 +272,8 @@ std::string CommandLineParser::getUsageStr()
 
     // Get width/wrap column of help text.
     size_t helpStartCol = maxHelpNameLen + 8;
-    size_t helpWidth = std::max(helpStartCol + 80, size_t(79));
-    size_t helpWrapCol = helpWidth - helpStartCol;
+    size_t helpWidth    = std::max(helpStartCol + 80, size_t(79));
+    size_t helpWrapCol  = helpWidth - helpStartCol;
 
     // Print option list.
     for (const auto& name: optionList)
@@ -283,7 +285,7 @@ std::string CommandLineParser::getUsageStr()
             continue;
         }
 
-        const Option *option = getOption(name);
+        const Option* option = getOption(name);
         ret << "  ";
         if (option->shortOption)
         {
@@ -364,7 +366,8 @@ const CommandLineParser::Option* CommandLineParser::getOption(const std::string&
 
 CommandLineParser::Option* CommandLineParser::getShortOption(char shortOption)
 {
-    auto it = std::find_if(options.begin(), options.end(), [=](const auto& elem) {return elem.second.shortOption == shortOption; });
+    auto it = std::find_if(options.begin(), options.end(), [=](const auto& elem)
+        { return elem.second.shortOption == shortOption; });
     if (it == options.end())
     {
         return nullptr;
@@ -373,10 +376,10 @@ CommandLineParser::Option* CommandLineParser::getShortOption(char shortOption)
 }
 
 
-void CommandLineParser::parseLongOption(int argc, char *argv[], int& i)
+void CommandLineParser::parseLongOption(int argc, char* argv[], int& i)
 {
-    std::vector<std::string> fields = ut1::splitString(argv[i] + 2, '=', 1);
-    std::string longOption = fields[0];
+    std::vector<std::string> fields     = ut1::splitString(argv[i] + 2, '=', 1);
+    std::string              longOption = fields[0];
 
     // First try exact match.
     Option* option = getOption(longOption);
@@ -398,7 +401,7 @@ void CommandLineParser::parseLongOption(int argc, char *argv[], int& i)
         else if (matchingOptions.size() == 1)
         {
             longOption = matchingOptions[0];
-            option = getOption(longOption);
+            option     = getOption(longOption);
         }
         else
         {
@@ -437,11 +440,11 @@ void CommandLineParser::parseLongOption(int argc, char *argv[], int& i)
 }
 
 
-void CommandLineParser::parseShortOptions(int argc, char *argv[], int& i)
+void CommandLineParser::parseShortOptions(int argc, char* argv[], int& i)
 {
     for (int j = 1; argv[i][j]; j++)
     {
-        char opt = argv[i][j];
+        char    opt    = argv[i][j];
         Option* option = getShortOption(opt);
         if (option)
         {
@@ -481,4 +484,3 @@ void CommandLineParser::parseShortOptions(int argc, char *argv[], int& i)
 
 
 } // namespace ut1
-

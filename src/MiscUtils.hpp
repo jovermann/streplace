@@ -44,10 +44,10 @@ std::string replaceString(const std::string& s, const std::string& from, const s
 std::string expandUnprintable(const std::string& s, char quotes = 0, char addQuotes = 0);
 
 /// Compile C-style backslash sequences back to unprintable chars.
-std::string compileCString(const std::string& s, std::string *errorMessageOut = nullptr);
+std::string compileCString(const std::string& s, std::string* errorMessageOut = nullptr);
 
 /// Skip whitespace (as in isspace()).
-void skipSpace(const char *& s);
+void skipSpace(const char*& s);
 
 /// Convert to lowercase.
 std::string tolower(std::string s);
@@ -81,7 +81,7 @@ std::string regex_replace(const std::string& s, const std::regex& re, FormatMatc
 {
     std::string r;
 
-    size_t endOfMatch = 0;
+    size_t               endOfMatch = 0;
     std::sregex_iterator end;
     for (std::sregex_iterator it(s.begin(), s.end(), re); it != end; it++)
     {
@@ -104,7 +104,7 @@ std::ostream& operator<<(std::ostream& s, const std::vector<T>& v)
 {
     s << "{";
     bool first = true;
-    for(const auto& elem: v)
+    for (const auto& elem: v)
     {
         if (!first)
         {
@@ -139,7 +139,7 @@ inline std::string toStr(const std::string& s)
 }
 
 /// Convert const char * to a printable std::string.
-inline std::string toStr(const char *s)
+inline std::string toStr(const char* s)
 {
     return "(const char*)" + expandUnprintable(s, '"', '"');
 }
@@ -165,4 +165,3 @@ void writeFile(const std::string& filename, const std::string& data);
 } // namespace ut1
 
 #endif /* include_MiscUtils_hpp */
-
