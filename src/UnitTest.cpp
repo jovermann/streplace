@@ -43,12 +43,17 @@ int UnitTestRegistry::runTests()
         maxNameLen = std::max(maxNameLen, kv.second->getTestName().length());
     }
 
+    size_t numTests = 0;
     for (const auto & kv: getUnitTestRegistry()->tests)
     {
         std::cout << "Test " << kv.second->getTestName() << std::string(maxNameLen - kv.second->getTestName().length() + 1, ' ');
         kv.second->run();
         std::cout << "OK\n";
+        numTests++;
     }
+
+    // Tests always abort() execution on errors so all tests passed when we get here.
+    std::cout << "--\nAll " << std::dec << numTests << " tests passed\n";
     return 0;
 }
 

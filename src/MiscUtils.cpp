@@ -18,14 +18,14 @@ bool hasPrefix(const std::string& s, const std::string& prefix)
 }
 
 
-UNIT_TEST(hasPrefix,
+UNIT_TEST(hasPrefix)
 {
     ASSERT_EQ(hasPrefix("foobar", "foo"), true);
     ASSERT_EQ(hasPrefix("foobar", "bar"), false);
     ASSERT_EQ(hasPrefix("foobar", ""), true);
     ASSERT_EQ(hasPrefix("", "bar"), false);
     ASSERT_EQ(hasPrefix("foo", "foobar"), false);
-})
+}
 
 
 bool hasSuffix(const std::string& s, const std::string& suffix)
@@ -38,14 +38,14 @@ bool hasSuffix(const std::string& s, const std::string& suffix)
 }
 
 
-UNIT_TEST(hasSuffix,
+UNIT_TEST(hasSuffix)
 {
     ASSERT_EQ(hasSuffix("foobar", "foo"), false);
     ASSERT_EQ(hasSuffix("foobar", "bar"), true);
     ASSERT_EQ(hasSuffix("foobar", ""), true);
     ASSERT_EQ(hasSuffix("", "bar"), false);
     ASSERT_EQ(hasSuffix("bar", "foobar"), false);
-})
+}
 
 
 bool contains(const std::string& s, char c)
@@ -54,14 +54,14 @@ bool contains(const std::string& s, char c)
 }
 
 
-UNIT_TEST(contains,
+UNIT_TEST(contains)
 {
     ASSERT_EQ(contains("abc", 'd'), false);
     ASSERT_EQ(contains("abc", 'b'), true);
     ASSERT_EQ(contains("", 'b'), false);
     ASSERT_EQ(contains("abc", '\0'), false);
     ASSERT_EQ(contains(std::string("ab\0c", 4), '\0'), true);
-})
+}
 
 
 bool contains(const std::string& haystack, const std::string& needle)
@@ -70,7 +70,7 @@ bool contains(const std::string& haystack, const std::string& needle)
 }
 
 
-UNIT_TEST(containsStr,
+UNIT_TEST(containsStr)
 {
     ASSERT_EQ(contains("abc", "abcd"), false);
     ASSERT_EQ(contains("abcd", "abc"), true);
@@ -79,7 +79,7 @@ UNIT_TEST(containsStr,
     ASSERT_EQ(contains("", ""), true);
     ASSERT_EQ(contains(std::string("ab\0c", 4), "\0"), true);
     ASSERT_EQ(contains(std::string("ab\0c", 4), "c"), true);
-})
+}
 
 
 void replaceStringInPlace(std::string& s, const std::string& from, const std::string& to)
@@ -107,7 +107,7 @@ std::string replaceString(const std::string& s, const std::string& from, const s
 }
 
 
-UNIT_TEST(replaceString,
+UNIT_TEST(replaceString)
 {
     ASSERT_EQ(replaceString("foobar", "foo", "abc"), "abcbar");
     ASSERT_EQ(replaceString("foobar", "foo", ""), "bar");
@@ -116,7 +116,7 @@ UNIT_TEST(replaceString,
     ASSERT_EQ(replaceString("foofoo", "foo", "foobar"), "foobarfoobar");
     ASSERT_EQ(replaceString("", "foo", "bar"), "");
     ASSERT_EQ(replaceString("xx", "x", "xx"), "xxxx");
-})
+}
 
 
 std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
@@ -183,14 +183,14 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
 }
 
 
-UNIT_TEST(expandUnprintable,
+UNIT_TEST(expandUnprintable)
 {
     ASSERT_EQ(expandUnprintable("abc"), "abc");
     ASSERT_EQ(expandUnprintable("ab\"c", '"', '"'), "\"ab\\\"c\"");
     ASSERT_EQ(expandUnprintable("abc\r\n\t   "), "abc\\r\\n\\t   ");
     ASSERT_EQ(expandUnprintable("\xaa\x61"), "\\252a");
     ASSERT_EQ(expandUnprintable(std::string("a\0b", 3)), "a\\000b");
-})
+}
 
 
 std::string compileCString(const std::string& s, std::string *errorMessageOut)
@@ -283,7 +283,7 @@ std::string compileCString(const std::string& s, std::string *errorMessageOut)
 }
 
 
-UNIT_TEST(compileCString,
+UNIT_TEST(compileCString)
 {
     ASSERT_EQ(compileCString(""), "");
     ASSERT_EQ(compileCString("abc"), "abc");
@@ -306,7 +306,7 @@ UNIT_TEST(compileCString,
     ASSERT_EQ(err, "non hex char following \\x");
     ASSERT_EQ(compileCString("abc\\y", &err), "abc\\y");
     ASSERT_EQ(err, "unknown backslash sequence '\\y'");
-})
+}
 
 
 std::vector<std::string> splitString(const std::string& s, char sep, int maxSplit)
@@ -333,7 +333,7 @@ std::vector<std::string> splitString(const std::string& s, char sep, int maxSpli
 }
 
 
-UNIT_TEST(splitString,
+UNIT_TEST(splitString)
 {
     std::vector<std::string> ref;
     ASSERT_EQ(splitString("", ','), ref);
@@ -352,7 +352,7 @@ UNIT_TEST(splitString,
     ASSERT_EQ(splitString("abc,def,", ','), ref);
     (ref = {"", "abc", "def"});
     ASSERT_EQ(splitString(",abc,def", ','), ref);
-})
+}
 
 
 std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
@@ -417,7 +417,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
 }
 
 
-UNIT_TEST(splitLines,
+UNIT_TEST(splitLines)
 {
     std::vector<std::string> ref;
     ASSERT_EQ(splitLines(""), ref);
@@ -426,7 +426,7 @@ UNIT_TEST(splitLines,
     ASSERT_EQ(splitLines("a\n"), ref);
     ref.push_back("");
     ASSERT_EQ(splitLines("a\n\n"), ref);
-})
+}
 
 
 std::string joinStrings(const std::vector<std::string>& stringList, const std::string& sep)
@@ -444,17 +444,17 @@ std::string joinStrings(const std::vector<std::string>& stringList, const std::s
 }
 
 
-UNIT_TEST(joinStrings,
+UNIT_TEST(joinStrings)
 {
     ASSERT_EQ(joinStrings({"a", "b", "c"}, ","), "a,b,c");
     ASSERT_EQ(joinStrings({"a", "b"}, ","), "a,b");
     ASSERT_EQ(joinStrings({"a"}, ","), "a");
     ASSERT_EQ(joinStrings({}, ","), "");
     ASSERT_EQ(joinStrings({"", "", ""}, ","), ",,");
-})
+}
 
 
-UNIT_TEST(regex_replace,
+UNIT_TEST(regex_replace)
 {
     ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return "(" + match[0].str() + ")"; }), "aa (XX) bb (YY) cc");
     ASSERT_EQ(regex_replace("XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return "(" + match[0].str() + ")"; }), "(XX) bb (YY) cc");
@@ -465,7 +465,7 @@ UNIT_TEST(regex_replace,
     ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return tolower(match[0].str()); }), "aa xx bb yy cc");
     ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return match.format("f($&)"); }), "aa f(XX) bb f(YY) cc");
     ASSERT_EQ(regex_replace("aa XX.jpg bb YY.jpg cc", std::regex("([A-Z]+)[.]jpg"), [&](const std::smatch& match) { return match.format("pic_$1.png"); }), "aa pic_XX.png bb pic_YY.png cc");
-})
+}
 
 
 void skipSpace(const char *& s)
@@ -480,12 +480,12 @@ void skipSpace(const char *& s)
 }
 
 
-UNIT_TEST(skipSpace,
+UNIT_TEST(skipSpace)
 {
     const char *p = " \t\n\ra \t";
     skipSpace(p);
     ASSERT_EQ(*p, 'a');
-})
+}
 
 
 std::string tolower(std::string s)
@@ -495,12 +495,12 @@ std::string tolower(std::string s)
 }
 
 
-UNIT_TEST(tolower,
+UNIT_TEST(tolower)
 {
     ASSERT_EQ(tolower("ABC"), "abc");
     ASSERT_EQ(tolower("\xff\x80 C"), "\xff\x80 c");
     ASSERT_EQ(tolower(""), "");
-})
+}
 
 
 std::string toupper(std::string s)
@@ -510,12 +510,12 @@ std::string toupper(std::string s)
 }
 
 
-UNIT_TEST(toupper,
+UNIT_TEST(toupper)
 {
     ASSERT_EQ(toupper("abc"), "ABC");
     ASSERT_EQ(toupper("\xff\x80 c"), "\xff\x80 C");
     ASSERT_EQ(toupper(""), "");
-})
+}
 
 
 std::string capitalize(std::string s)
@@ -529,7 +529,7 @@ std::string capitalize(std::string s)
 }
 
 
-UNIT_TEST(capitalize,
+UNIT_TEST(capitalize)
 {
     ASSERT_EQ(capitalize("abc"), "Abc");
     ASSERT_EQ(capitalize("ABC"), "Abc");
@@ -538,7 +538,7 @@ UNIT_TEST(capitalize,
     ASSERT_EQ(capitalize(""), "");
     ASSERT_EQ(capitalize(" abc"), " abc");
     ASSERT_EQ(capitalize("one two"), "One two");
-})
+}
 
 
 void addTrailingLfIfMissing(std::string& s)
@@ -550,7 +550,7 @@ void addTrailingLfIfMissing(std::string& s)
 }
 
 
-UNIT_TEST(addTrailingLfIfMissing,
+UNIT_TEST(addTrailingLfIfMissing)
 {
     std::string s("abc");
     addTrailingLfIfMissing(s);
@@ -564,7 +564,7 @@ UNIT_TEST(addTrailingLfIfMissing,
     s = "\n";
     addTrailingLfIfMissing(s);
     ASSERT_EQ(s, "\n");
-})
+}
 
 
 std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v)
@@ -630,13 +630,13 @@ void writeFile(const std::string& filename, const std::string& data)
 }
 
 
-UNIT_TEST(readFile_WriteFile,
+UNIT_TEST(readFile_WriteFile)
 {
     std::string filename = "/tmp/UtilitiesTest";
     writeFile(filename, "abc");
     std::string s = readFile(filename);
     ASSERT_EQ(s, "abc");
-})
+}
 
 
 } // namespace ut1
