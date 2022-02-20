@@ -22,11 +22,11 @@ public:
     /// Register test in global test registry.
     /// This is implicitly called by UNITS_TEST().
     static void registerTest(UnitTest *test);
-    
+
     /// Run all tests.
     static int runTests();
 
-private:    
+private:
     std::map<std::string,UnitTest*> tests;
 };
 
@@ -34,18 +34,18 @@ class UnitTest
 {
 public:
     UnitTest(const std::string& testName_, const std::string& testFile_, int testLine_):
-        testName(testName_), testFile(testFile_), testLine(testLine_) 
+        testName(testName_), testFile(testFile_), testLine(testLine_)
     {
         UnitTestRegistry::registerTest(this);
     }
-    
+
     virtual ~UnitTest();
-    
+
     virtual void run() = 0;
     std::string getTestName() const { return testFile + ":" + testName; }
-        
+
     std::string testName;
-    std::string testFile;    
+    std::string testFile;
     int testLine{};
 };
 

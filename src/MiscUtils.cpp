@@ -66,7 +66,7 @@ UNIT_TEST(contains,
 
 bool contains(const std::string& haystack, const std::string& needle)
 {
-    return haystack.find(needle) != std::string::npos;    
+    return haystack.find(needle) != std::string::npos;
 }
 
 
@@ -94,7 +94,7 @@ void replaceStringInPlace(std::string& s, const std::string& from, const std::st
                 break;
             }
             s.replace(pos, from.size(), to);
-        }                        
+        }
     }
 }
 
@@ -128,23 +128,23 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
     {
         r += addQuotes;
     }
-    
+
     for(const char& c: s)
-    {        
+    {
         if(isprint(unsigned(c)))
-        {             
-            if((c =='\\') || (quotes && (c == quotes))) 
-            { 
+        {
+            if((c =='\\') || (quotes && (c == quotes)))
+            {
                 // Backslashify backslash and quotes.
                 r += '\\';
-            }        
+            }
             r += c;
         }
         else
         {
             // Unprintable char.
             r += '\\'; // Leading backslash.
-            switch (c) 
+            switch (c)
             {
                 // Named control chars.
             case '\a': r += 'a'; break;
@@ -154,12 +154,12 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
             case '\r': r += 'r'; break;
             case '\t': r += 't'; break;
             case '\v': r += 'v'; break;
-            default: 
+            default:
                 // Hex/octal byte.
                 char next = *(&c + 1);
                 if (isxdigit(unsigned(next)))
                 {
-                    // Next digit is a valid hex digit: 
+                    // Next digit is a valid hex digit:
                     // Use 3-digit octal variant to limit the length of the numeric escape sequence.
                     ::snprintf(buf, sizeof(buf), "%03o", uint8_t(c));
                 }
@@ -173,7 +173,7 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
             }
         }
     }
-    
+
     if (addQuotes)
     {
         r += addQuotes;
@@ -207,22 +207,22 @@ std::string compileCString(const std::string& s, std::string *errorMessageOut)
     }
     while ((c = *(p++)))
     {
-        if (c == '\\') 
-        { 
+        if (c == '\\')
+        {
             // Escape sequence.
             c = *(p++);
-            switch (c) 
+            switch (c)
             {
                 // End of string in escape sequence: Emit verbatim backslash.
-            case 0: 
-                c = '\\'; 
-                p--; 
+            case 0:
+                c = '\\';
+                p--;
                 if (errorMessageOut)
                 {
                     *errorMessageOut = "unexpected end of string in escape sequence";
                 }
                 break;
-                
+
                 // Named control chars.
             case 'a': c = '\a'; break;
             case 'b': c = '\b'; break;
@@ -231,7 +231,7 @@ std::string compileCString(const std::string& s, std::string *errorMessageOut)
             case 'r': c = '\r'; break;
             case 't': c = '\t'; break;
             case 'v': c = '\v'; break;
-                
+
                 // Hex.
             case 'x':
                 if (isxdigit(unsigned(p[0])))
@@ -248,9 +248,9 @@ std::string compileCString(const std::string& s, std::string *errorMessageOut)
                     }
                 }
                 break;
-                
+
                 // Octal.
-            case '0': 
+            case '0':
             case '1':
             case '2':
             case '3':
@@ -295,7 +295,7 @@ UNIT_TEST(compileCString,
     ASSERT_EQ(compileCString("\\x41\\x41\\x41"), "AAA");
     ASSERT_EQ(compileCString("\\101\\101\\101"), "AAA");
     ASSERT_EQ(compileCString("\\1112"), "\x49\x32");
-    
+
     // Errors:
     std::string err;
     ASSERT_EQ(compileCString("abc\\", &err), "abc\\");
@@ -305,14 +305,14 @@ UNIT_TEST(compileCString,
     ASSERT_EQ(compileCString("abc\\xg", &err), "abc\\xg");
     ASSERT_EQ(err, "non hex char following \\x");
     ASSERT_EQ(compileCString("abc\\y", &err), "abc\\y");
-    ASSERT_EQ(err, "unknown backslash sequence '\\y'");    
+    ASSERT_EQ(err, "unknown backslash sequence '\\y'");
 })
 
 
 std::vector<std::string> splitString(const std::string& s, char sep, int maxSplit)
 {
     std::vector<std::string> r;
-    
+
     // Special case: Empty string results in empty list (rather than a list with a single empty string).
     if (s.empty())
     {
@@ -353,8 +353,8 @@ UNIT_TEST(splitString,
     (ref = {"", "abc", "def"});
     ASSERT_EQ(splitString(",abc,def", ','), ref);
 })
-          
-          
+
+
 std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
 {
     std::vector<std::string> r;
@@ -382,7 +382,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
         {
             splitPos = pos + 1;
         }
-        if ((wrapCol > 0) && 
+        if ((wrapCol > 0) &&
             (col == wrapCol))
         {
             if (splitPos == start)
@@ -404,7 +404,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
                     indent += ' ';
                 }
             }
-            continue;   
+            continue;
         }
         pos++;
         col++;
@@ -413,7 +413,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
     {
         r.push_back(s.substr(start, s.length() - start));
     }
-    return r;    
+    return r;
 }
 
 
@@ -428,7 +428,7 @@ UNIT_TEST(splitLines,
     ASSERT_EQ(splitLines("a\n\n"), ref);
 })
 
-          
+
 std::string joinStrings(const std::vector<std::string>& stringList, const std::string& sep)
 {
     std::stringstream r;
@@ -466,8 +466,8 @@ UNIT_TEST(regex_replace,
     ASSERT_EQ(regex_replace("aa XX bb YY cc", std::regex("[A-Z]+"), [&](const std::smatch& match) { return match.format("f($&)"); }), "aa f(XX) bb f(YY) cc");
     ASSERT_EQ(regex_replace("aa XX.jpg bb YY.jpg cc", std::regex("([A-Z]+)[.]jpg"), [&](const std::smatch& match) { return match.format("pic_$1.png"); }), "aa pic_XX.png bb pic_YY.png cc");
 })
-          
-      
+
+
 void skipSpace(const char *& s)
 {
     if (s)
@@ -521,7 +521,7 @@ UNIT_TEST(toupper,
 std::string capitalize(std::string s)
 {
     s = tolower(s);
-    if (!s.empty()) 
+    if (!s.empty())
     {
         s[0] = std::toupper(unsigned(s[0]));
     }
@@ -565,7 +565,7 @@ UNIT_TEST(addTrailingLfIfMissing,
     addTrailingLfIfMissing(s);
     ASSERT_EQ(s, "\n");
 })
-          
+
 
 std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v)
 {
@@ -595,19 +595,19 @@ std::ostream& flushTty(std::ostream& os)
     {
         stdoutIsATty = !!isatty(1);
     }
-    
+
     // Do not flush stdout if os is not stdout.
     if (os.rdbuf() != std::cout.rdbuf())
     {
         return os;
     }
-    
+
     // Flush stdout only if it is connected to a terminal.
     if (stdoutIsATty)
     {
         os << std::flush;
     }
-    
+
     return os;
 }
 

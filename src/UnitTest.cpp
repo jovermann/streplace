@@ -30,7 +30,7 @@ void UnitTestRegistry::registerTest(UnitTest *test)
         std::cout << "Error: registerTest(" << test->testName << "): Test already registered.\n";
         return;
     }
-    
+
     getUnitTestRegistry()->tests[test->testName] = test;
 }
 
@@ -42,7 +42,7 @@ int UnitTestRegistry::runTests()
     {
         maxNameLen = std::max(maxNameLen, kv.second->getTestName().length());
     }
-    
+
     for (const auto & kv: getUnitTestRegistry()->tests)
     {
         std::cout << "Test " << kv.second->getTestName() << std::string(maxNameLen - kv.second->getTestName().length() + 1, ' ');
@@ -62,10 +62,10 @@ UnitTest::~UnitTest()
 // "unreachable-code" warning in main() without suppressing this rather useful
 // warning globally.
 #pragma GCC diagnostic ignored "-Wmissing-noreturn"
-void UNIT_TEST_RUN() 
+void UNIT_TEST_RUN()
 {
     UnitTestRegistry::runTests();
-    
+
     // If we ever get here all tests were ok.
     std::exit(0);
 }

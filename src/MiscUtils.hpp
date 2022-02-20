@@ -80,7 +80,7 @@ template<typename FormatMatch>
 std::string regex_replace(const std::string& s, const std::regex& re, FormatMatch f)
 {
     std::string r;
-    
+
     size_t endOfMatch = 0;
     std::sregex_iterator end;
     for (std::sregex_iterator it(s.begin(), s.end(), re); it != end; it++)
@@ -89,9 +89,9 @@ std::string regex_replace(const std::string& s, const std::regex& re, FormatMatc
         r.append(f(*it));
         endOfMatch = it->position(0) + it->length(0);
     }
-    
+
     r.append(s.substr(endOfMatch));
-    
+
     return r;
 }
 
@@ -129,7 +129,7 @@ std::string toStr(const T& t)
 {
     std::stringstream r;
     r << t;
-    return r.str();    
+    return r.str();
 }
 
 /// Convert std::string to a printable std::string.
@@ -163,6 +163,6 @@ void writeFile(const std::string& filename, const std::string& data);
 
 
 } // namespace ut1
-    
+
 #endif /* include_MiscUtils_hpp */
 

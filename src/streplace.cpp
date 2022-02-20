@@ -32,12 +32,12 @@ public:
         {
             throw std::runtime_error("Rule \"" + rule + "\" must contain exactly one '=' char. Please escape verbatime '=' chars with a backslash.");
         }
-        lhs = sides[0];  
+        lhs = sides[0];
         rhs = ut1::compileCString(sides[1]);
     }
-    
+
     std::string lhs;
-    std::string rhs;    
+    std::string rhs;
     uint64_t numMatches{};
 };
 
@@ -49,7 +49,7 @@ std::ostream& operator<<(std::ostream& os, const Rule& rule)
 }
 
 
-/// Steplace application logic. 
+/// Steplace application logic.
 /// Todo: Lots.
 /// - Split out replacing logic from file handling logic.
 /// - Implement all the options which are already here.
@@ -82,7 +82,7 @@ public:
         modifyFiles = !modifySymlinks;
         dummyMode |= dummyTrace || dummyLineTrace;
         trace = dummyTrace || dummyLineTrace;
-        
+
         // Regex flags.
         regexFlags = std::regex::ECMAScript; // | std::regex::multiline;
 #if 0
@@ -97,7 +97,7 @@ public:
             regexFlags |= std::regex::icase;
         }
     }
-    
+
     /// Add rule.
     void addRule(const std::string& rule)
     {
@@ -113,12 +113,12 @@ public:
             std::cout << rule << "\n";
         }
     }
-    
-    /// Process directory entry (rename and modify content).   
+
+    /// Process directory entry (rename and modify content).
     void processDirectoryEntry(std::filesystem::directory_entry& directoryEntry)
     {
         // Rename.
-        
+
         // Process content.
         if ((!followLinks) && directoryEntry.is_symlink())
         {
@@ -132,12 +132,12 @@ public:
         {
             processDirectory(directoryEntry);
         }
-        else 
+        else
         {
             processOther(directoryEntry);
         }
     }
-    
+
     /// Print statistics.
     void printStats()
     {
@@ -176,7 +176,7 @@ private:
         {
             return "socket";
         }
-        else 
+        else
         {
             // Will never get here.
             return "unknown file type";
@@ -196,14 +196,14 @@ private:
             // Read file.
             std::string data = ut1::readFile(directoryEntry.path());
             numFilesRead++;
-            
+
             // Apply all rules.
             size_t numMatches = 0;
             for (Rule rule: rules)
             {
                 numMatches += applyRule(data, rule);
             }
-            
+
             if (verbose)
             {
                 if (numMatches)
@@ -212,7 +212,7 @@ private:
                 }
                 std::cout << "\n";
             }
-            
+
             if (numMatches == 0)
             {
                 return;
@@ -224,7 +224,7 @@ private:
             {
                 ut1::writeFile(directoryEntry.path(), data);
             }
-            
+
             // Trace.
             if (trace)
             {
@@ -234,14 +234,14 @@ private:
         }
         else
         {
-            if (verbose)            
+            if (verbose)
             {
                 std::cout << "Ignoring file " << directoryEntry.path() << ".\n";
             }
             numIgnored++;
         }
     }
-    
+
     /// Process symlink.
     void processSymlink(const std::filesystem::directory_entry& directoryEntry)
     {
@@ -255,53 +255,53 @@ private:
         }
         else
         {
-            if (verbose)            
+            if (verbose)
             {
                 std::cout << "Ignoring symlink " << directoryEntry.path() << ".\n";
             }
             numIgnored++;
         }
     }
-    
+
     /// Process directory.
     void processDirectory(const std::filesystem::directory_entry& directoryEntry)
     {
         if (recursive && (!skipDir(directoryEntry.path())))
         {
-            if (verbose)            
+            if (verbose)
             {
                 std::cout << "Processing dir  " << directoryEntry.path() << ".\n";
             }
-            
+
             // Note: Take a copy of each directory_entry intentionally,
             // because we will potentially modify it (rename) in processDirectoryEntry.
             for (std::filesystem::directory_entry entry: std::filesystem::directory_iterator(directoryEntry))
             {
                 processDirectoryEntry(entry);
-            }         
-            
+            }
+
             numDirs++;
         }
         else
         {
-            if (verbose)            
+            if (verbose)
             {
                 std::cout << "Ignoring   dir  " << directoryEntry.path() << ".\n";
             }
             numIgnored++;
         }
     }
-    
+
     /// Process non-file, non-dir and non-symlinks.
     void processOther(const std::filesystem::directory_entry& directoryEntry)
     {
-        if (verbose)            
+        if (verbose)
         {
             std::cout << "Ignoring   " << getFileTypeStr(directoryEntry) << " '" << directoryEntry.path() << "'.\n";
         }
         numIgnored++;
     }
-    
+
     /// Return true iff we should skip this dir.
     bool skipDir(const std::filesystem::path& dir)
     {
@@ -329,31 +329,31 @@ private:
         numMatches++;
         return r;
     }
-    
+
     /// Apply rule to string.
     /// Return number of matches.
     /// Increase rule.numMatches.
     uint64_t applyRule(std::string& s, Rule& rule)
     {
         size_t numMatches = 0;
-        
+
         if (noRegex)
         {
         }
         else
-        {  
+        {
             s = ut1::regex_replace(s, std::regex(rule.lhs), [&](const std::smatch& match) { return replaceMatch(match, rule, numMatches); });
         }
-        
+
         rule.numMatches += numMatches;
         return numMatches;
     }
-    
+
     /// Print trace or line trace.
     void printTrace(const std::string& s, const std::string& filename, size_t numMatches)
     {
         std::cout << escapeSequences.bold << filename << escapeSequences.normal << " (" << escapeSequences.bold << numMatches << escapeSequences.normal << " matches):\n";
-        
+
         if (dummyTrace)
         {
             std::cout << s;
@@ -362,7 +362,7 @@ private:
         {
             // Line trace.
             std::vector<std::string> lines = ut1::splitLines(s);
-            
+
             // Mark all lines which contain the escape sequences for matches including context lines.
             std::vector<bool> marked(lines.size());
             for (ssize_t line = 0; line < ssize_t(lines.size()); line++)
@@ -378,7 +378,7 @@ private:
                     }
                 }
             }
-                        
+
             // Print all marked lines.
             for (size_t line = 0; line < lines.size(); line++)
             {
@@ -397,7 +397,7 @@ private:
 
 private:
     // --- Private data. ---
-    
+
     /// Command line options.
     bool recursive{};
     bool followLinks{};
@@ -406,7 +406,7 @@ private:
     bool ignoreCase{};
     bool noRegex{};
     bool wholeWords{};
-    
+
     bool modifySymlinks{};
 
     unsigned verbose{};
@@ -420,14 +420,14 @@ private:
     bool modifyFiles{};
     std::vector<Rule> rules;
     std::regex::flag_type regexFlags{};
-    
+
     /// Statistics.
     uint64_t numIgnored{};
     uint64_t numDirs{};
     uint64_t numFilesRead{};
     uint64_t numFilesWritten{};
     uint64_t numSymlinks{};
-        
+
     EscapeSequences escapeSequences;
 };
 
@@ -436,7 +436,7 @@ int main(int argc, char *argv[])
 {
     // Run unit tests and exit if enabled at compile time.
     UNIT_TEST_RUN();
-    
+
     // Command line options.
     ut1::CommandLineParser cl("streplace", "Replace strings in files, filenames and symbolic links, in place, recursively.\n"
                          "\n"
@@ -446,7 +446,7 @@ int main(int argc, char *argv[])
                          "- A rule is of the from FOO=BAR which replaces FOO by BAR. FOO is a regular expression by default (unless -x is specified).\n"
                          "- Use C escape sequences like \\n \\t \\xff. Use \\\\ to get a verbatim backslash. Note that you will need to protect backslashes from the shell by using single quotes or by duplicating backslashes.\n"
                          "- Use \\= to get a verbatim =.\n"
-	                 "- Use 'IMG([0-9]*).jpeg=pic$1.jpg' to reuse subexpressions of regular expressions ($& for the whole match, $n for subexpressions)."
+                     "- Use 'IMG([0-9]*).jpeg=pic$1.jpg' to reuse subexpressions of regular expressions ($& for the whole match, $n for subexpressions)."
                          "\n",
                          "\n"
                          "$programName version $version *** Copyright (c) 2021-2022 Johannes Overmann *** https://github.com/jovermann/streplace", "0.10.1");
@@ -460,7 +460,7 @@ int main(int argc, char *argv[])
     cl.addOption('i', "ignore-case", "Ignore case.");
     cl.addOption('x', "no-regex", "Match the left side of each rule as a simple string, not as a regex (substring search, useful with binary files).");
     cl.addOption('w', "whole-words", "Match only whole words (only for -x mode, not for regex).");
-    
+
     cl.addHeader("\nRenaming options:\n");
     cl.addOption('A', "rename", "Rename files and dirs in addition to modifying files contents. Use -N if you only want to rename and not modify the file content.");
     cl.addOption('s', "modify-symlinks", "Modify the path symlinks point to instead of file content and/or filename.");
@@ -472,13 +472,13 @@ int main(int argc, char *argv[])
     cl.addOption('L', "dummy-linetrace", "Do not write/change anything, but print matching lines of matching files to stdout and highlight replacements.");
     cl.addOption(0,   "context", "set number of context lines for --dummy-linetrace to N (use +N to hide line separator) (range=[0..], default=1).", "N", "1");
 
-        
+
     // Parse command line options.
     cl.parse(argc, argv);
-    
+
     // Steplace instance.
     Streplace streplace(cl);
-    
+
     try
     {
         // Parse non-option arguments (paths and rules).
@@ -509,13 +509,13 @@ int main(int argc, char *argv[])
         {
             streplace.printRules();
         }
-        
+
         // Process files and directories.
         for (std::filesystem::directory_entry path: paths)
         {
             streplace.processDirectoryEntry(path);
         }
-        
+
         // Print stats.
         if (cl("verbose"))
         {
@@ -526,7 +526,8 @@ int main(int argc, char *argv[])
     {
         cl.error(e.what());
     }
-            
+
     return 0;
 }
-    
+
+

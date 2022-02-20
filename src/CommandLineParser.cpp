@@ -34,10 +34,10 @@ void CommandLineParser::Option::setValue(const std::string& v, char listSepChar_
         value = std::to_string(count);
     }
 }
-    
+
 
 size_t CommandLineParser::Option::getHelpNameLen() const
-{    
+{
     return longOption.length() + argName.length() + (!argName.empty());
 }
 
@@ -63,7 +63,7 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
     // Check for duplicate long option.
     if (options.count(longOption))
         throw std::runtime_error("addOption(longOption=" + longOption + "): option already exists\n");
-    
+
     // Check for duplicate short option.
     if (shortOption)
     {
@@ -71,7 +71,7 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
         if (existingOption)
             throw std::runtime_error("addOption(shortOption=" + std::string(1, shortOption) + "): option already exists\n");
     }
-    
+
     Option opt;
     opt.shortOption = shortOption;
     opt.longOption = longOption;
@@ -79,14 +79,14 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
     opt.argName = argName;
     opt.defaultValue = defaultValue;
     opt.value = defaultValue;
-    
+
     options[longOption] = opt;
     // Keep --help and --version at the end of the list.
     optionList.insert(optionList.begin() + optionList.size() - std::min(optionList.size(), size_t(2)), longOption);
     return options[longOption];
 }
 
-    
+
 void CommandLineParser::parse(int argc, char *argv[])
 {
     // Parse arguments.
@@ -114,26 +114,26 @@ void CommandLineParser::parse(int argc, char *argv[])
             else if (argv[i][1] == 0)
             {
                 // Positional arg '-'.
-                args.push_back(argv[i]);                    
+                args.push_back(argv[i]);
             }
             else
             {
                 // Short option(s).
-                parseShortOptions(argc, argv, i);                
-            }                    
+                parseShortOptions(argc, argv, i);
+            }
         }
         else
         {
             // Positional arg.
-            args.push_back(argv[i]);                    
+            args.push_back(argv[i]);
         }
     }
-    
+
     if (isSet("help"))
     {
         printMessage(getUsageStr(), 0, true);
     }
-    
+
     if (isSet("version"))
     {
         printMessage("version " + version, 0, true);
@@ -141,7 +141,7 @@ void CommandLineParser::parse(int argc, char *argv[])
 }
 
 
-unsigned CommandLineParser::getCount(const std::string& longOption) const 
+unsigned CommandLineParser::getCount(const std::string& longOption) const
 {
     const Option* option = getOption(longOption);
     if (option)
@@ -151,11 +151,11 @@ unsigned CommandLineParser::getCount(const std::string& longOption) const
     else
     {
         throw std::runtime_error("Unknown option '" + longOption + "'!");
-    }        
+    }
 }
 
 
-const std::string &CommandLineParser::getStr(const std::string& longOption) const 
+const std::string &CommandLineParser::getStr(const std::string& longOption) const
 {
     const Option* option = getOption(longOption);
     if (option)
@@ -165,7 +165,7 @@ const std::string &CommandLineParser::getStr(const std::string& longOption) cons
     else
     {
         throw std::runtime_error("Unknown option '" + longOption + "'!");
-    }        
+    }
 }
 
 
@@ -189,7 +189,7 @@ long long CommandLineParser::getInt(const std::string& longOption) const
 }
 
 
-unsigned long long CommandLineParser::getUInt(const std::string& longOption) const 
+unsigned long long CommandLineParser::getUInt(const std::string& longOption) const
 {
     std::string value = getStr(longOption);
     const char *end = nullptr;
@@ -203,7 +203,7 @@ unsigned long long CommandLineParser::getUInt(const std::string& longOption) con
 }
 
 
-double CommandLineParser::getDouble(const std::string& longOption) const 
+double CommandLineParser::getDouble(const std::string& longOption) const
 {
     std::string value = getStr(longOption);
     const char *end = nullptr;
@@ -231,8 +231,8 @@ void CommandLineParser::setValue(const std::string& longOption, const std::strin
     else
     {
         throw std::runtime_error("Unknown option '" + longOption + "'!");
-    }        
-    
+    }
+
 }
 
 
@@ -256,23 +256,23 @@ int CommandLineParser::printMessage(const std::string& message, int exitStatus, 
 std::string CommandLineParser::getUsageStr()
 {
     std::stringstream ret;
-    
+
     // Get usage header.
-    std::vector<std::string> lines = ut1::splitLines(usage, 80);  
+    std::vector<std::string> lines = ut1::splitLines(usage, 80);
     ret << ut1::joinStrings(lines, "\n") << "\n"; // ut1::splitLines() swallows the last LF.
-    
+
     // Get maximum longOption[=argName] string len.
     size_t maxHelpNameLen = 0;
     for (const auto& opt: options)
     {
         maxHelpNameLen = std::max(maxHelpNameLen, opt.second.getHelpNameLen());
     }
-    
+
     // Get width/wrap column of help text.
     size_t helpStartCol = maxHelpNameLen + 8;
     size_t helpWidth = std::max(helpStartCol + 80, size_t(79));
     size_t helpWrapCol = helpWidth - helpStartCol;
-    
+
     // Print option list.
     for (const auto& name: optionList)
     {
@@ -282,8 +282,8 @@ std::string CommandLineParser::getUsageStr()
             ret << name.substr(7);
             continue;
         }
-        
-        const Option *option = getOption(name);            
+
+        const Option *option = getOption(name);
         ret << "  ";
         if (option->shortOption)
         {
@@ -310,7 +310,7 @@ std::string CommandLineParser::getUsageStr()
         }
         if (!option->defaultValue.empty())
         {
-            braceItems.push_back("default=" + option->defaultValue);                
+            braceItems.push_back("default=" + option->defaultValue);
         }
         if (option->value != option->defaultValue)
         {
@@ -333,14 +333,14 @@ std::string CommandLineParser::getUsageStr()
         }
         ret << "\n";
     }
-    
+
     // Get usage footer.
     ret << footer;
-    
+
     std::string u = ret.str();
     ut1::replaceStringInPlace(u, "$programName", programName);
     ut1::replaceStringInPlace(u, "$version", version);
-    
+
     return u;
 }
 
@@ -377,7 +377,7 @@ void CommandLineParser::parseLongOption(int argc, char *argv[], int& i)
 {
     std::vector<std::string> fields = ut1::splitString(argv[i] + 2, '=', 1);
     std::string longOption = fields[0];
-    
+
     // First try exact match.
     Option* option = getOption(longOption);
     if (option == nullptr)
@@ -398,10 +398,10 @@ void CommandLineParser::parseLongOption(int argc, char *argv[], int& i)
         else if (matchingOptions.size() == 1)
         {
             longOption = matchingOptions[0];
-            option = getOption(longOption);                                
+            option = getOption(longOption);
         }
         else
-        {  
+        {
             error("Ambiguous option --" + longOption + " (matches --" + ut1::joinStrings(matchingOptions, ", --") + ").");
         }
     }
@@ -435,7 +435,7 @@ void CommandLineParser::parseLongOption(int argc, char *argv[], int& i)
         }
     }
 }
-    
+
 
 void CommandLineParser::parseShortOptions(int argc, char *argv[], int& i)
 {
@@ -478,7 +478,7 @@ void CommandLineParser::parseShortOptions(int argc, char *argv[], int& i)
         }
     }
 }
-    
+
 
 } // namespace ut1
 
