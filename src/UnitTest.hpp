@@ -14,7 +14,7 @@
 
 #ifdef ENABLE_UNIT_TEST
 
-class UnitTest;
+struct UnitTest;
 
 class UnitTestRegistry
 {
@@ -30,9 +30,8 @@ private:
     std::map<std::string, UnitTest*> tests;
 };
 
-class UnitTest
+struct UnitTest
 {
-public:
     UnitTest(const std::string& testName_, const std::string& testFile_, int testLine_)
     : testName(testName_)
     , testFile(testFile_)
@@ -53,37 +52,25 @@ public:
 
 void UNIT_TEST_RUN();
 
-# define UNIT_TEST(name)                  \
-  class UnitTest_##name : public UnitTest \
-  {                                       \
-   public:                                \
-   UnitTest_##name()                      \
-   : UnitTest(#name, __FILE__, __LINE__)  \
-   {                                      \
-   }                                      \
-   virtual void run() override;           \
-  } UnitTest_instance_##name;             \
+# define UNIT_TEST(name)                   \
+  struct UnitTest_##name : public UnitTest \
+  {                                        \
+   UnitTest_##name()                       \
+   : UnitTest(#name, __FILE__, __LINE__)   \
+   {                                       \
+   }                                       \
+   virtual void run() override;            \
+  } UnitTest_instance_##name;              \
   inline void UnitTest_##name::run()
-# define ASSERT_EQ(a, b)                                                                 \
-  {                                                                                      \
-   if ((a) != (b))                                                                       \
-   {                                                                                     \
-    std::cout << "\nError: ASSERT_EQ(" << toStr(a) << ", " << toStr(b) << ") failed!\n"; \
-    assert((a) == (b));                                                                  \
-   }                                                                                     \
-  }
-# define ASSERT_NE(a, b)                                                                 \
-  {                                                                                      \
-   if ((a) == (b))                                                                       \
-   {                                                                                     \
-    std::cout << "\nError: ASSERT_NE(" << toStr(a) << ", " << toStr(b) << ") failed!\n"; \
-    assert((a) != (b));                                                                  \
-   }                                                                                     \
-  }
 
 #else
 
-# define UNIT_TEST(name)
+# define UNIT_TEST(name) \
+  class UnitTest_##name  \
+  {                      \
+   void run();           \
+  };                     \
+  inline void UnitTest_##name::run()
 # define UNIT_TEST_RUN() \
   do                     \
   {                      \
@@ -91,5 +78,22 @@ void UNIT_TEST_RUN();
 
 #endif
 
+#define ASSERT_EQ(a, b)                                                                 \
+ {                                                                                      \
+  if ((a) != (b))                                                                       \
+  {                                                                                     \
+   std::cout << "\nError: ASSERT_EQ(" << toStr(a) << ", " << toStr(b) << ") failed!\n"; \
+   assert((a) == (b));                                                                  \
+  }                                                                                     \
+ }
+
+#define ASSERT_NE(a, b)                                                                 \
+ {                                                                                      \
+  if ((a) == (b))                                                                       \
+  {                                                                                     \
+   std::cout << "\nError: ASSERT_NE(" << toStr(a) << ", " << toStr(b) << ") failed!\n"; \
+   assert((a) != (b));                                                                  \
+  }                                                                                     \
+ }
 
 #endif /* include_UnitTest_hpp */
