@@ -25,7 +25,7 @@ public:
 class Rule
 {
 public:
-    Rule(const std::string& rule)
+    explicit Rule(const std::string& rule)
     {
         std::vector<std::string> sides = ut1::splitString(rule, '=');
         if (sides.size() != 2)
