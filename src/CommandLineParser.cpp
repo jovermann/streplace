@@ -49,7 +49,7 @@ CommandLineParser::CommandLineParser(const std::string& programName_, const std:
 , version(version_)
 {
     // Appear in --help in reverse order:
-    addOption(0, "version", "Print version and exit.");
+    addOption(' ', "version", "Print version and exit.");
     addOption('h', "help", "Print this help message and exit.");
 }
 
@@ -63,6 +63,12 @@ void CommandLineParser::addHeader(const std::string& header)
 
 CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const std::string& longOption, const std::string& help, const std::string& argName, const std::string& defaultValue)
 {
+    // Accept ' ' (space) as "no short option" to allow nicely formatted addOption() calls with clang-format.
+    if (shortOption == ' ')
+    {
+        shortOption = 0;
+    }
+
     // Check for duplicate long option.
     if (options.count(longOption))
         throw std::runtime_error("addOption(longOption=" + longOption + "): option already exists\n");
