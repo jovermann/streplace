@@ -10,9 +10,10 @@ CXXFLAGS ?= -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padde
 
 CXXSTD ?= -std=c++17
 
+BUILDDIR=build
 SOURCES = $(wildcard src/*.cpp)
-OBJECTS = $(SOURCES:%.cpp=build/%.o)
-DEPENDS := $(SOURCES:%.cpp=build/%.d)
+OBJECTS = $(SOURCES:%.cpp=$(BUILDDIR)/%.o)
+DEPENDS := $(SOURCES:%.cpp=$(BUILDDIR)/%.d)
 
 default: $(TARGET)
 
@@ -41,6 +42,13 @@ test: unit_test
 
 format:
 	clang-format -i --style=file src/*.hpp src/*.cpp
+
+tidy: CXXFLAGS += -MJ $@.cdb
+tidy: $(TARGET)
+	echo "[" > $(BUILDDIR)/compile_commands.json
+	cat $(BUILDDIR)/src/*.cdb >> $(BUILDDIR)/compile_commands.json
+	echo "]" >> $(BUILDDIR)/compile_commands.json
+	clang-tidy -p $(BUILDDIR) --config-file .clang-tidy src/*.cpp src/*.hpp
 
 .PHONY: clean default unit_test test format
 

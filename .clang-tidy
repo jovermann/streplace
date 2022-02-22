@@ -1,0 +1,41 @@
+# Copyright (c) 2022 Johannes Overmann
+# Released under the MIT license. See LICENSE for license.
+
+Checks: >-
+  -clang-diagnostic-unused-macros,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+  -modernize-pass-by-value,
+  -modernize-avoid-c-arrays,
+#  bugprone-*,
+#  -bugprone-easily-swappable-parameters
+#  -bugprone-narrowing-conversions
+#  -bugprone-string-literal-with-embedded-nul
+#  cppcoreguidelines-slicing,
+#  cppcoreguidelines-special-member-functions,
+#  google-build-explicit-make-pair,
+#  google-build-namespaces,
+#  google-default-arguments,
+#  google-global-names-in-headers,
+#  google-readability-casting,
+#  llvm-*,
+#  -llvm-namespace-comment,
+#  misc-*,
+#  -misc-no-recursion,
+#  -misc-non-private-member-variables-in-classes,
+#  -misc-unused-alias-decls,
+#  performance-*,
+#  readability-*,
+#  -readability-avoid-const-params-in-decls,
+#  -readability-magic-numbers,
+#  -readability-static-accessed-through-instance,
+
+CheckOptions:
+  - { key: readability-identifier-naming.ClassCase,     value: CamelCase }
+  - { key: readability-identifier-naming.FunctionCase,  value: camelBack }
+  - { key: readability-identifier-naming.ParameterCase, value: camelBack }
+  - { key: readability-identifier-naming.StructCase,    value: CamelCase }
+  - { key: readability-identifier-naming.VariableCase,  value: camelBack }
+
+WarningsAsErrors: '*'
