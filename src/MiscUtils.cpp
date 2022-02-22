@@ -339,20 +339,19 @@ UNIT_TEST(splitString)
 {
     std::vector<std::string> ref;
     ASSERT_EQ(splitString("", ','), ref);
-    ref.push_back("abc");
+    ref = {"abc"};
     ASSERT_EQ(splitString("abc", ','), ref);
-    ref.push_back("foo");
-    ref.push_back("bar");
+    ref = {"abc", "foo", "bar"};
     ASSERT_EQ(splitString("abc,foo,bar", ','), ref);
-    ref.back() = "bar,x,y,z";
+    ref = {"abc", "foo", "bar,x,y,z"};
     ASSERT_EQ(splitString("abc,foo,bar,x,y,z", ',', 2), ref);
-    (ref = {"", "", ""});
+    ref = {"", "", ""};
     ASSERT_EQ(splitString(",,", ','), ref);
-    (ref = {"", ""});
+    ref = {"", ""};
     ASSERT_EQ(splitString(",", ','), ref);
-    (ref = {"abc", "def", ""});
+    ref = {"abc", "def", ""};
     ASSERT_EQ(splitString("abc,def,", ','), ref);
-    (ref = {"", "abc", "def"});
+    ref = {"", "abc", "def"};
     ASSERT_EQ(splitString(",abc,def", ','), ref);
 }
 
@@ -422,10 +421,10 @@ UNIT_TEST(splitLines)
 {
     std::vector<std::string> ref;
     ASSERT_EQ(splitLines(""), ref);
-    ref.push_back("a");
+    ref = {"a"};
     ASSERT_EQ(splitLines("a"), ref);
     ASSERT_EQ(splitLines("a\n"), ref);
-    ref.push_back("");
+    ref = {"a", ""};
     ASSERT_EQ(splitLines("a\n\n"), ref);
 }
 

@@ -105,7 +105,7 @@ void CommandLineParser::parse(int argc, char* argv[])
                     // Keep the "--" as an argument so the application can add further semantics to it.
                     for (; i < argc; i++)
                     {
-                        args.push_back(argv[i]);
+                        args.emplace_back(argv[i]);
                     }
                 }
                 else
@@ -117,7 +117,7 @@ void CommandLineParser::parse(int argc, char* argv[])
             else if (argv[i][1] == 0)
             {
                 // Positional arg '-'.
-                args.push_back(argv[i]);
+                args.emplace_back(argv[i]);
             }
             else
             {
@@ -128,7 +128,7 @@ void CommandLineParser::parse(int argc, char* argv[])
         else
         {
             // Positional arg.
-            args.push_back(argv[i]);
+            args.emplace_back(argv[i]);
         }
     }
 
@@ -308,7 +308,7 @@ std::string CommandLineParser::getUsageStr()
         std::vector<std::string> braceItems;
         if (option->isList)
         {
-            braceItems.push_back("list");
+            braceItems.emplace_back("list");
         }
         if (!option->defaultValue.empty())
         {
@@ -318,7 +318,7 @@ std::string CommandLineParser::getUsageStr()
         {
             if (option->argName.empty())
             {
-                braceItems.push_back("set");
+                braceItems.emplace_back("set");
             }
             else
             {
