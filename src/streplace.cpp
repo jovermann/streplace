@@ -21,16 +21,24 @@ public:
 };
 
 
+/// Error exception.
+#pragma GCC diagnostic ignored "-Wweak-vtables"
+class Error: public std::runtime_error
+{
+public:
+    Error(const std::string& message): std::runtime_error(message) {}
+};
+
 /// Rule.
 class Rule
 {
 public:
-    explicit Rule(const std::string& rule)
+    explicit Rule(const std::string& rule, const std::string& separator)
     {
-        std::vector<std::string> sides = ut1::splitString(rule, '=');
+        std::vector<std::string> sides = ut1::splitString(rule, separator);
         if (sides.size() != 2)
         {
-            throw std::runtime_error("Rule \"" + rule + "\" must contain exactly one '=' char. Please escape verbatime '=' chars with a backslash.");
+            throw Error("Rule \"" + rule + "\" must contain exactly one separator '" + separator + "' (got " + std::to_string(sides.size() - 1) + ")." + ((sides.size() >= 2) ? " You can choose a different/unique separator string using --equals to avoid conflicts with the left and right side of the rule." : ""));
         }
         lhs = sides[0];
         rhs = ut1::compileCString(sides[1]);
@@ -68,6 +76,8 @@ public:
         ignoreCase = cl("ignore-case");
         noRegex    = cl("no-regex");
         wholeWords = cl("whole-words");
+        equals     = cl.getStr("equals");
+        dollar     = cl.getStr("dollar");
 
         modifySymlinks = cl("modify-symlinks");
 
@@ -96,12 +106,21 @@ public:
         {
             regexFlags |= std::regex::icase;
         }
+
+        if (equals.empty())
+        {
+            throw Error("--equals must not be empty");
+        }
+        if (dollar.empty())
+        {
+            throw Error("--dollar must not be empty");
+        }
     }
 
     /// Add rule.
     void addRule(const std::string& rule)
     {
-        rules.emplace_back(rule);
+        rules.emplace_back(rule, equals);
     }
 
     /// Print rules.
@@ -407,6 +426,8 @@ private:
     bool ignoreCase{};
     bool noRegex{};
     bool wholeWords{};
+    std::string equals;
+    std::string dollar;
 
     bool modifySymlinks{};
 
@@ -456,12 +477,14 @@ int main(int argc, char* argv[])
     cl.addHeader("\nFile options:\n");
     cl.addOption('r', "recursive", "Recursively process directories.");
     cl.addOption('l', "follow-links", "Follow symbolic links.");
-    cl.addOption(0, "all", "Process all files and directories. By default '.git' directories are skipped.");
+    cl.addOption(' ', "all", "Process all files and directories. By default '.git' directories are skipped.");
 
     cl.addHeader("\nMatching options:\n");
     cl.addOption('i', "ignore-case", "Ignore case.");
     cl.addOption('x', "no-regex", "Match the left side of each rule as a simple string, not as a regex (substring search, useful with binary files).");
     cl.addOption('w', "whole-words", "Match only whole words (only for -x mode, not for regex).");
+    cl.addOption(' ', "equals", "Use STR instead of \"=\" as the rule lhs/rhs-separator, e.g. fooSTRbar. This may be one or more chars long. Example: --equals==== allows rules to have the form \"int a = 0;===unsigned a = 0;\"", "STR", "=");
+    cl.addOption(' ', "dollar", "Use STR instead of \"$\" in substring references in the replacement string, e.g. STR&, STR1, STR12. This may be one or more chars long. Example: --dollar=SUB for \"0x([0-9A-Za-z]+)=$SUB1\"", "STR", "$");
 
     cl.addHeader("\nRenaming options:\n");
     cl.addOption('A', "rename", "Rename files and dirs in addition to modifying files contents. Use -N if you only want to rename and not modify the file content.");
@@ -472,23 +495,27 @@ int main(int argc, char* argv[])
     cl.addOption('d', "dummy-mode", "Do not write/change anything.");
     cl.addOption('T', "dummy-trace", "Do not write/change anything, but print matching files to stdout and highlight replacements.");
     cl.addOption('L', "dummy-linetrace", "Do not write/change anything, but print matching lines of matching files to stdout and highlight replacements.");
-    cl.addOption(0, "context", "set number of context lines for --dummy-linetrace to N (use +N to hide line separator) (range=[0..], default=1).", "N", "1");
-
+    cl.addOption(' ', "context", "set number of context lines for --dummy-linetrace to N (use +N to hide line separator) (range=[0..], default=1).", "N", "1");
 
     // Parse command line options.
     cl.parse(argc, argv);
 
-    // Steplace instance.
-    Streplace streplace(cl);
-
     try
     {
+        // Steplace instance.
+        Streplace streplace(cl);
+
         // Parse non-option arguments (paths and rules).
         std::vector<std::filesystem::directory_entry> paths;
         bool                                          allowRules = true;
         for (const auto& arg: cl.getArgs())
         {
-            if (allowRules && ut1::contains(arg, '='))
+            if (arg.empty())
+            {
+                cl.printMessage("Ignoring empty argument.");
+                continue;
+            }
+            if (allowRules && ut1::contains(arg, cl.getStr("equals")))
             {
                 streplace.addRule(arg);
             }

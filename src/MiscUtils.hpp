@@ -63,9 +63,13 @@ void addTrailingLfIfMissing(std::string& s);
 
 // --- String utilities: Misc. ---
 
-/// Split string at separator chars.
+/// Split string at separator char.
 /// An empty string returns an empty list.
 std::vector<std::string> splitString(const std::string& s, char sep, int maxSplit = -1);
+
+/// Split string at separator string.
+/// An empty string returns an empty list.
+std::vector<std::string> splitString(const std::string& s, const std::string& sep, int maxSplit = -1);
 
 /// Split text into lines at LF and optionally wrap text at wrapCol.
 /// A trailing LF is ignored and does not result in an extra empty line at the end.

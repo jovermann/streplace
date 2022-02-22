@@ -321,21 +321,22 @@ std::vector<std::string> splitString(const std::string& s, char sep, int maxSpli
         return r;
     }
 
-    std::istringstream iss(s + std::string(1, sep));
-    std::string        elem;
-    for (; (maxSplit != 0) && std::getline(iss, elem, sep); maxSplit--)
+    for (size_t start = 0;; maxSplit--)
     {
-        r.push_back(elem);
-    }
-    if (size_t(iss.tellg()) < s.size())
-    {
-        r.push_back(s.substr(iss.tellg()));
+        size_t end = s.find(sep, start);
+        if ((end == std::string::npos) || (maxSplit == 0))
+        {
+            r.push_back(s.substr(start));
+            break;
+        }
+        r.push_back(s.substr(start, end - start));
+        start = end + 1;
     }
     return r;
 }
 
 
-UNIT_TEST(splitString)
+UNIT_TEST(splitStringChar)
 {
     std::vector<std::string> ref;
     ASSERT_EQ(splitString("", ','), ref);
@@ -347,12 +348,74 @@ UNIT_TEST(splitString)
     ASSERT_EQ(splitString("abc,foo,bar,x,y,z", ',', 2), ref);
     ref = {"", "", ""};
     ASSERT_EQ(splitString(",,", ','), ref);
+    ref = {"", "", ""};
+    ASSERT_EQ(splitString(",,", ',', 3), ref);
+    ref = {"", "", ""};
+    ASSERT_EQ(splitString(",,", ',', 2), ref);
+    ref = {"", ","};
+    ASSERT_EQ(splitString(",,", ',', 1), ref);
+    ref = {",,"};
+    ASSERT_EQ(splitString(",,", ',', 0), ref);
     ref = {"", ""};
     ASSERT_EQ(splitString(",", ','), ref);
     ref = {"abc", "def", ""};
     ASSERT_EQ(splitString("abc,def,", ','), ref);
     ref = {"", "abc", "def"};
     ASSERT_EQ(splitString(",abc,def", ','), ref);
+}
+
+
+std::vector<std::string> splitString(const std::string& s, const std::string& sep, int maxSplit)
+{
+    std::vector<std::string> r;
+
+    // Special case: Empty string results in empty list (rather than a list with a single empty string).
+    if (s.empty())
+    {
+        return r;
+    }
+
+    for (size_t start = 0;; maxSplit--)
+    {
+        size_t end = s.find(sep, start);
+        if ((end == std::string::npos) || (maxSplit == 0))
+        {
+            r.push_back(s.substr(start));
+            break;
+        }
+        r.push_back(s.substr(start, end - start));
+        start = end + sep.length();
+    }
+    return r;
+}
+
+
+UNIT_TEST(splitStringStr)
+{
+    std::vector<std::string> ref;
+    ASSERT_EQ(splitString("", "==="), ref);
+    ref = {"abc"};
+    ASSERT_EQ(splitString("abc", "==="), ref);
+    ref = {"a=c", "foo", "bar"};
+    ASSERT_EQ(splitString("a=c===foo===bar", "==="), ref);
+    ref = {"abc", "foo", "bar===x===y===z"};
+    ASSERT_EQ(splitString("abc===foo===bar===x===y===z", "===", 2), ref);
+    ref = {"", "", ""};
+    ASSERT_EQ(splitString("==>==>", "==>"), ref);
+    ref = {"", "", ""};
+    ASSERT_EQ(splitString("==>==>", "==>", 3), ref);
+    ref = {"", "", ""};
+    ASSERT_EQ(splitString("==>==>", "==>", 2), ref);
+    ref = {"", "==>"};
+    ASSERT_EQ(splitString("==>==>", "==>", 1), ref);
+    ref = {"==>==>"};
+    ASSERT_EQ(splitString("==>==>", "==>", 0), ref);
+    ref = {"", ""};
+    ASSERT_EQ(splitString("===", "==="), ref);
+    ref = {"abc", "def", ""};
+    ASSERT_EQ(splitString("abc===def===", "==="), ref);
+    ref = {"", "abc", "def"};
+    ASSERT_EQ(splitString("===abc===def", "==="), ref);
 }
 
 
@@ -379,7 +442,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
             firstPart = true;
             continue;
         }
-        if (!isalnum(unsigned(s[pos])))
+        if (isspace(unsigned(s[pos])))
         {
             splitPos = pos + 1;
         }
