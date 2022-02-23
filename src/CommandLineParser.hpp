@@ -7,6 +7,7 @@
 #ifndef include_CommandLineParser_hpp
 #define include_CommandLineParser_hpp
 
+#include <cstddef>
 #include <string>
 #include <vector>
 #include <map>
@@ -37,13 +38,13 @@ public:
         }
 
         /// Has formal argument.
-        bool hasArg() const { return !argName.empty(); }
+        [[nodiscard]] bool hasArg() const noexcept { return !argName.empty(); }
 
         /// Set value.
         void setValue(const std::string& v, char listSepChar_);
 
         /// Get "longName[=argName] string length.
-        size_t getHelpNameLen() const;
+        [[nodiscard]] std::size_t getHelpNameLen() const;
 
         /// Meta info (initialized by addOption()).
         char        shortOption{};
@@ -76,31 +77,31 @@ public:
     void parse(int argc, char* argv[]);
 
     /// Get switch value.
-    bool operator()(const std::string& longOption) const { return isSet(longOption); }
+    [[nodiscard]] bool operator()(const std::string& longOption) const { return isSet(longOption); }
 
     /// Get switch value.
-    bool isSet(const std::string& longOption) const { return getCount(longOption) > 0; }
+    [[nodiscard]] bool isSet(const std::string& longOption) const { return getCount(longOption) > 0; }
 
     /// Get number of times option was specified on the command line.
-    unsigned getCount(const std::string& longOption) const;
+    [[nodiscard]] unsigned getCount(const std::string& longOption) const;
 
     /// Get string value.
-    const std::string& getStr(const std::string& longOption) const;
+    [[nodiscard]] const std::string& getStr(const std::string& longOption) const;
 
     /// Get string list;
-    std::vector<std::string> getList(const std::string& longOption);
+    [[nodiscard]] std::vector<std::string> getList(const std::string& longOption);
 
     /// Get signed int value.
-    long long getInt(const std::string& longOption) const;
+    [[nodiscard]] long long getInt(const std::string& longOption) const;
 
     /// Get unsigned int value.
-    unsigned long long getUInt(const std::string& longOption) const;
+    [[nodiscard]] unsigned long long getUInt(const std::string& longOption) const;
 
     /// Get double value.
-    double getDouble(const std::string& longOption) const;
+    [[nodiscard]] double getDouble(const std::string& longOption) const;
 
     /// Get positional args.
-    const std::vector<std::string>& getArgs() const { return args; }
+    [[nodiscard]] const std::vector<std::string>& getArgs() const noexcept { return args; }
 
     /// Set option value from within the program.
     /// This is useful to set logical non-static default values.
@@ -113,17 +114,17 @@ public:
     int printMessage(const std::string& message, int exitStatus = 0, bool exit = false);
 
     /// Get usage string.
-    std::string getUsageStr();
+    [[nodiscard]] std::string getUsageStr();
 
 private:
     /// Get option.
-    Option* getOption(const std::string& longOption);
+    [[nodiscard]] Option* getOption(const std::string& longOption);
 
     /// Get option (const).
-    const Option* getOption(const std::string& longOption) const;
+    [[nodiscard]] const Option* getOption(const std::string& longOption) const;
 
     /// Get option by short option name.
-    Option* getShortOption(char shortOption);
+    [[nodiscard]] Option* getShortOption(char shortOption);
 
     /// Parse long option in argv[i], potentially consuming an argument in argv[++i].
     void parseLongOption(int argc, char* argv[], int& i);

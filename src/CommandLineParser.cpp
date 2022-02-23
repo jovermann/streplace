@@ -4,10 +4,6 @@
 //
 // This file is released under the MIT license. See LICENSE for license.
 
-#include <string>
-#include <vector>
-#include <map>
-#include <exception>
 #include <algorithm>
 #include <functional>
 #include <iostream>
@@ -17,7 +13,7 @@ namespace ut1
 {
 
 
-void CommandLineParser::Option::setValue(const std::string& v, char listSepChar_)
+void CommandLineParser::Option::setValue(const std::string& v, const char listSepChar_)
 {
     if (isList && (count > 0))
     {
@@ -57,7 +53,7 @@ CommandLineParser::CommandLineParser(const std::string& programName_, const std:
 void CommandLineParser::addHeader(const std::string& header)
 {
     // Keep --help and --version at the end of the list.
-    optionList.insert(optionList.begin() + optionList.size() - std::min(optionList.size(), size_t(2)), "header:" + header);
+    optionList.insert(optionList.begin() + optionList.size() - std::min(optionList.size(), std::size_t(2)), "header:" + header);
 }
 
 
@@ -91,7 +87,7 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
 
     options[longOption] = opt;
     // Keep --help and --version at the end of the list.
-    optionList.insert(optionList.begin() + optionList.size() - std::min(optionList.size(), size_t(2)), longOption);
+    optionList.insert(optionList.begin() + optionList.size() - std::min(optionList.size(), std::size_t(2)), longOption);
     return options[longOption];
 }
 
@@ -186,9 +182,9 @@ std::vector<std::string> CommandLineParser::getList(const std::string& longOptio
 
 long long CommandLineParser::getInt(const std::string& longOption) const
 {
-    std::string value = getStr(longOption);
-    const char* end   = nullptr;
-    long long   r     = strtoll(value.c_str(), const_cast<char**>(&end), 0);
+    const std::string value = getStr(longOption);
+    const char*       end   = nullptr;
+    const long long   r     = std::strtoll(value.c_str(), const_cast<char**>(&end), 0);
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {
@@ -200,9 +196,9 @@ long long CommandLineParser::getInt(const std::string& longOption) const
 
 unsigned long long CommandLineParser::getUInt(const std::string& longOption) const
 {
-    std::string        value = getStr(longOption);
-    const char*        end   = nullptr;
-    unsigned long long r     = strtoull(value.c_str(), const_cast<char**>(&end), 0);
+    const std::string        value = getStr(longOption);
+    const char*              end   = nullptr;
+    const unsigned long long r     = std::strtoull(value.c_str(), const_cast<char**>(&end), 0);
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {
@@ -214,9 +210,9 @@ unsigned long long CommandLineParser::getUInt(const std::string& longOption) con
 
 double CommandLineParser::getDouble(const std::string& longOption) const
 {
-    std::string value = getStr(longOption);
-    const char* end   = nullptr;
-    double      r     = strtod(value.c_str(), const_cast<char**>(&end));
+    const std::string value = getStr(longOption);
+    const char*       end   = nullptr;
+    const double      r     = std::strtod(value.c_str(), const_cast<char**>(&end));
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {
@@ -250,7 +246,7 @@ int CommandLineParser::error(const std::string& message)
 }
 
 
-int CommandLineParser::printMessage(const std::string& message, int exitStatus, bool exit)
+int CommandLineParser::printMessage(const std::string& message, const int exitStatus, const bool exit)
 {
     std::cout << programName << ": " << message << "\n";
     if (exit)
@@ -270,16 +266,16 @@ std::string CommandLineParser::getUsageStr()
     ret << ut1::joinStrings(lines, "\n") << "\n"; // ut1::splitLines() swallows the last LF.
 
     // Get maximum longOption[=argName] string len.
-    size_t maxHelpNameLen = 0;
+    std::size_t maxHelpNameLen = 0;
     for (const auto& opt: options)
     {
         maxHelpNameLen = std::max(maxHelpNameLen, opt.second.getHelpNameLen());
     }
 
     // Get width/wrap column of help text.
-    size_t helpStartCol = maxHelpNameLen + 8;
-    size_t helpWidth    = std::max(helpStartCol + 80, size_t(79));
-    size_t helpWrapCol  = helpWidth - helpStartCol;
+    const std::size_t helpStartCol = maxHelpNameLen + 8;
+    const std::size_t helpWidth    = std::max(helpStartCol + 80, std::size_t(79));
+    const std::size_t helpWrapCol  = helpWidth - helpStartCol;
 
     // Print option list.
     for (const auto& name: optionList)
@@ -307,7 +303,7 @@ std::string CommandLineParser::getUsageStr()
             nameEqArg += "=" + option->argName;
         }
         ret << " --" << nameEqArg;
-        int pad = std::max(size_t(0), maxHelpNameLen - nameEqArg.length()) + 1;
+        const int pad = std::max(std::size_t(0), maxHelpNameLen - nameEqArg.length()) + 1;
         ret << std::string(pad, ' ');
         lines = ut1::splitLines(option->help, helpWrapCol);
         ret << ut1::joinStrings(lines, "\n" + std::string(helpStartCol, ' '));

@@ -12,7 +12,7 @@ namespace ut1
 {
 
 
-bool hasPrefix(const std::string& s, const std::string& prefix)
+bool hasPrefix(const std::string& s, const std::string& prefix) noexcept
 {
     return s.compare(0, prefix.length(), prefix) == 0;
 }
@@ -28,7 +28,7 @@ UNIT_TEST(hasPrefix)
 }
 
 
-bool hasSuffix(const std::string& s, const std::string& suffix)
+bool hasSuffix(const std::string& s, const std::string& suffix) noexcept
 {
     if (suffix.length() > s.length())
     {
@@ -48,7 +48,7 @@ UNIT_TEST(hasSuffix)
 }
 
 
-bool contains(const std::string& s, char c)
+bool contains(const std::string& s, const char c) noexcept
 {
     return s.find(c) != std::string::npos;
 }
@@ -64,7 +64,7 @@ UNIT_TEST(contains)
 }
 
 
-bool contains(const std::string& haystack, const std::string& needle)
+bool contains(const std::string& haystack, const std::string& needle) noexcept
 {
     return haystack.find(needle) != std::string::npos;
 }
@@ -119,7 +119,7 @@ UNIT_TEST(replaceString)
 }
 
 
-std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
+std::string expandUnprintable(const std::string& s, const char quotes, const char addQuotes)
 {
     std::string r;
     char        buf[4];
@@ -131,7 +131,7 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
 
     for (const char& c: s)
     {
-        if (isprint(unsigned(c)))
+        if (std::isprint(unsigned(c)))
         {
             if ((c == '\\') || (quotes && (c == quotes)))
             {
@@ -156,17 +156,17 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
             case '\v': r += 'v'; break;
             default:
                 // Hex/octal byte.
-                char next = *(&c + 1);
-                if (isxdigit(unsigned(next)))
+                const char next = *(&c + 1);
+                if (std::isxdigit(unsigned(next)))
                 {
                     // Next digit is a valid hex digit:
                     // Use 3-digit octal variant to limit the length of the numeric escape sequence.
-                    ::snprintf(buf, sizeof(buf), "%03o", uint8_t(c));
+                    std::snprintf(buf, sizeof(buf), "%03o", std::uint8_t(c));
                 }
                 else
                 {
                     // Hex byte.
-                    ::snprintf(buf, sizeof(buf), "x%02x", uint8_t(c));
+                    std::snprintf(buf, sizeof(buf), "x%02x", std::uint8_t(c));
                 }
                 r += buf;
                 break;
@@ -236,9 +236,9 @@ std::string compileCString(const std::string& s, std::string* errorMessageOut)
 
                 // Hex.
             case 'x':
-                if (isxdigit(unsigned(p[0])))
+                if (std::isxdigit(unsigned(p[0])))
                 {
-                    c = strtoul(p, const_cast<char**>(&end), 16);
+                    c = std::strtoul(p, const_cast<char**>(&end), 16);
                     p = end;
                 }
                 else
@@ -265,7 +265,7 @@ std::string compileCString(const std::string& s, std::string* errorMessageOut)
                 buf[1] = p[0];
                 buf[2] = p[0] ? p[1] : 0;
                 buf[3] = 0;
-                c      = strtoul(buf, const_cast<char**>(&end), 8);
+                c      = std::strtoul(buf, const_cast<char**>(&end), 8);
                 p += end - buf - 1;
                 break;
 
@@ -311,7 +311,7 @@ UNIT_TEST(compileCString)
 }
 
 
-std::vector<std::string> splitString(const std::string& s, char sep, int maxSplit)
+std::vector<std::string> splitString(const std::string& s, const char sep, int maxSplit)
 {
     std::vector<std::string> r;
 
@@ -321,9 +321,9 @@ std::vector<std::string> splitString(const std::string& s, char sep, int maxSpli
         return r;
     }
 
-    for (size_t start = 0;; maxSplit--)
+    for (std::size_t start = 0;; maxSplit--)
     {
-        size_t end = s.find(sep, start);
+        std::size_t end = s.find(sep, start);
         if ((end == std::string::npos) || (maxSplit == 0))
         {
             r.push_back(s.substr(start));
@@ -375,9 +375,9 @@ std::vector<std::string> splitString(const std::string& s, const std::string& se
         return r;
     }
 
-    for (size_t start = 0;; maxSplit--)
+    for (std::size_t start = 0;; maxSplit--)
     {
-        size_t end = s.find(sep, start);
+        std::size_t end = s.find(sep, start);
         if ((end == std::string::npos) || (maxSplit == 0))
         {
             r.push_back(s.substr(start));
@@ -419,13 +419,13 @@ UNIT_TEST(splitStringStr)
 }
 
 
-std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
+std::vector<std::string> splitLines(const std::string& s, const std::size_t wrapCol)
 {
     std::vector<std::string> r;
-    size_t                   start    = 0;
-    size_t                   pos      = 0;
-    size_t                   splitPos = 0;
-    size_t                   col      = 0;
+    std::size_t              start    = 0;
+    std::size_t              pos      = 0;
+    std::size_t              splitPos = 0;
+    std::size_t              col      = 0;
     std::string              indent;
     bool                     firstPart = true; // First subline of a wrapped line.
     while (pos < s.length())
@@ -442,7 +442,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
             firstPart = true;
             continue;
         }
-        if (isspace(unsigned(s[pos])))
+        if (std::isspace(unsigned(s[pos])))
         {
             splitPos = pos + 1;
         }
@@ -460,7 +460,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
             if (firstPart)
             {
                 firstPart = false;
-                size_t i  = 0;
+                std::size_t i = 0;
                 while ((i < line.size()) && ((line[i] == ' ') || (line[i] == '-')))
                 {
                     i++;
@@ -498,7 +498,7 @@ std::string joinStrings(const std::vector<std::string>& stringList, const std::s
     if (!stringList.empty())
     {
         r << stringList[0];
-        for (size_t i = 1; i < stringList.size(); i++)
+        for (std::size_t i = 1; i < stringList.size(); i++)
         {
             r << sep << stringList[i];
         }
@@ -549,11 +549,11 @@ UNIT_TEST(regex_replace)
 }
 
 
-void skipSpace(const char*& s)
+void skipSpace(const char*& s) noexcept
 {
     if (s)
     {
-        while (isspace(uint8_t(*s)))
+        while (std::isspace(uint8_t(*s)))
         {
             s++;
         }
@@ -571,7 +571,7 @@ UNIT_TEST(skipSpace)
 
 std::string tolower(std::string s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
+    std::transform(s.begin(), s.end(), s.begin(), [](const unsigned char c)
         { return std::tolower(c); });
     return s;
 }
@@ -587,7 +587,7 @@ UNIT_TEST(tolower)
 
 std::string toupper(std::string s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
+    std::transform(s.begin(), s.end(), s.begin(), [](const unsigned char c)
         { return std::toupper(c); });
     return s;
 }
@@ -698,7 +698,7 @@ std::ostream& flushTty(std::ostream& os)
 std::string readFile(const std::string& filename)
 {
     std::ifstream is(filename, std::ios::in | std::ios::binary | std::ios::ate);
-    size_t        size = is.tellg();
+    std::size_t   size = is.tellg();
     is.seekg(0, is.beg);
     std::string r(size, '\0');
     is.read(&r[0], size);

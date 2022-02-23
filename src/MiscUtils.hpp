@@ -21,16 +21,16 @@ namespace ut1
 // --- String utilities: Operations on one string. ---
 
 /// Has prefix.
-bool hasPrefix(const std::string& s, const std::string& prefix);
+[[nodiscard]] bool hasPrefix(const std::string& s, const std::string& prefix) noexcept;
 
 /// Has suffix.
-bool hasSuffix(const std::string& s, const std::string& suffix);
+[[nodiscard]] bool hasSuffix(const std::string& s, const std::string& suffix) noexcept;
 
 /// Contains character.
-bool contains(const std::string& s, char c);
+[[nodiscard]] bool contains(const std::string& s, char c) noexcept;
 
 /// Contains string.
-bool contains(const std::string& haystack, const std::string& needle);
+[[nodiscard]] bool contains(const std::string& haystack, const std::string& needle) noexcept;
 
 /// Replace substring in place.
 /// If from is empty, s is left unmodified.
@@ -38,25 +38,25 @@ void replaceStringInPlace(std::string& s, const std::string& from, const std::st
 
 /// Replace substring.
 /// If from is empty, s is left unmodified.
-std::string replaceString(const std::string& s, const std::string& from, const std::string& to);
+[[nodiscard]] std::string replaceString(const std::string& s, const std::string& from, const std::string& to);
 
 /// Expand unprintable chars to C-style backslash sequences.
-std::string expandUnprintable(const std::string& s, char quotes = 0, char addQuotes = 0);
+[[nodiscard]] std::string expandUnprintable(const std::string& s, char quotes = 0, char addQuotes = 0);
 
 /// Compile C-style backslash sequences back to unprintable chars.
-std::string compileCString(const std::string& s, std::string* errorMessageOut = nullptr);
+[[nodiscard]] std::string compileCString(const std::string& s, std::string* errorMessageOut = nullptr);
 
 /// Skip whitespace (as in isspace()).
-void skipSpace(const char*& s);
+void skipSpace(const char*& s) noexcept;
 
 /// Convert to lowercase.
-std::string tolower(std::string s);
+[[nodiscard]] std::string tolower(std::string s);
 
 /// Convert to uppercase.
-std::string toupper(std::string s);
+[[nodiscard]] std::string toupper(std::string s);
 
 /// Capitalize (first char uppercase, rest lowercase).
-std::string capitalize(std::string s);
+[[nodiscard]] std::string capitalize(std::string s);
 
 /// Add trailing LF if missing.
 void addTrailingLfIfMissing(std::string& s);
@@ -65,23 +65,23 @@ void addTrailingLfIfMissing(std::string& s);
 
 /// Split string at separator char.
 /// An empty string returns an empty list.
-std::vector<std::string> splitString(const std::string& s, char sep, int maxSplit = -1);
+[[nodiscard]] std::vector<std::string> splitString(const std::string& s, char sep, int maxSplit = -1);
 
 /// Split string at separator string.
 /// An empty string returns an empty list.
-std::vector<std::string> splitString(const std::string& s, const std::string& sep, int maxSplit = -1);
+[[nodiscard]] std::vector<std::string> splitString(const std::string& s, const std::string& sep, int maxSplit = -1);
 
 /// Split text into lines at LF and optionally wrap text at wrapCol.
 /// A trailing LF is ignored and does not result in an extra empty line at the end.
 /// The input "a\n" and "a" both result in ["a"].
-std::vector<std::string> splitLines(const std::string& s, size_t wrapCol = 0);
+[[nodiscard]] std::vector<std::string> splitLines(const std::string& s, size_t wrapCol = 0);
 
 /// Join vector of strings.
-std::string joinStrings(const std::vector<std::string>& stringList, const std::string& sep);
+[[nodiscard]] std::string joinStrings(const std::vector<std::string>& stringList, const std::string& sep);
 
 /// std::regex_replace() with a callback function instead of a format string.
 template<typename FormatMatch>
-std::string regex_replace(const std::string& s, const std::regex& re, FormatMatch f)
+[[nodiscard]] std::string regex_replace(const std::string& s, const std::regex& re, FormatMatch f)
 {
     std::string r;
 
@@ -129,7 +129,7 @@ std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v);
 
 /// Safely convert to printable string.
 template<typename T>
-std::string toStr(const T& t)
+[[nodiscard]] std::string toStr(const T& t)
 {
     std::stringstream r;
     r << t;
@@ -137,13 +137,13 @@ std::string toStr(const T& t)
 }
 
 /// Convert std::string to a printable std::string.
-inline std::string toStr(const std::string& s)
+[[nodiscard]] inline std::string toStr(const std::string& s)
 {
     return expandUnprintable(s, '"', '"');
 }
 
 /// Convert const char * to a printable std::string.
-inline std::string toStr(const char* s)
+[[nodiscard]] inline std::string toStr(const char* s)
 {
     return "(const char*)" + expandUnprintable(s, '"', '"');
 }
@@ -160,7 +160,7 @@ std::ostream& flushTty(std::ostream& os);
 // --- File utilities. ---
 
 /// Read string from file.
-std::string readFile(const std::string& filename);
+[[nodiscard]] std::string readFile(const std::string& filename);
 
 /// Write string to file.
 void writeFile(const std::string& filename, const std::string& data);

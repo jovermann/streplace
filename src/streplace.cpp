@@ -7,6 +7,7 @@
 #include <regex>
 #include <iostream>
 #include <filesystem>
+#include <utility>
 #include "CommandLineParser.hpp"
 #include "MiscUtils.hpp"
 #include "UnitTest.hpp"
@@ -26,7 +27,7 @@ public:
 class Error: public std::runtime_error
 {
 public:
-    Error(const std::string& message): std::runtime_error(message) {}
+    explicit Error(const std::string& message): std::runtime_error(message) {}
 };
 
 /// Rule.
@@ -40,13 +41,13 @@ public:
         {
             throw Error("Rule \"" + rule + "\" must contain exactly one separator '" + separator + "' (got " + std::to_string(sides.size() - 1) + ")." + ((sides.size() >= 2) ? " You can choose a different/unique separator string using --equals to avoid conflicts with the left and right side of the rule." : ""));
         }
-        lhs = sides[0];
+        lhs = std::move(sides[0]);
         rhs = ut1::compileCString(sides[1]);
     }
 
-    std::string lhs;
-    std::string rhs;
-    uint64_t    numMatches{};
+    std::string   lhs;
+    std::string   rhs;
+    std::uint64_t numMatches{};
 };
 
 
@@ -66,7 +67,7 @@ class Streplace
 {
 public:
     /// Constructor.
-    Streplace(const ut1::CommandLineParser& cl)
+    explicit Streplace(const ut1::CommandLineParser& cl)
     {
         // Get command line options.
         recursive   = cl("recursive");
@@ -165,7 +166,7 @@ public:
 
 private:
     /// Get file type string, e.g. "file" or "directory".
-    std::string getFileTypeStr(const std::filesystem::directory_entry& directoryEntry)
+    [[nodiscard]] std::string getFileTypeStr(const std::filesystem::directory_entry& directoryEntry)
     {
         if ((!followLinks) && directoryEntry.is_symlink())
         {
@@ -217,8 +218,8 @@ private:
             numFilesRead++;
 
             // Apply all rules.
-            size_t numMatches = 0;
-            for (Rule rule: rules)
+            std::size_t numMatches = 0;
+            for (Rule& rule: rules)
             {
                 numMatches += applyRule(data, rule);
             }
@@ -322,7 +323,7 @@ private:
     }
 
     /// Return true iff we should skip this dir.
-    bool skipDir(const std::filesystem::path& dir)
+    [[nodiscard]] bool skipDir(const std::filesystem::path& dir)
     {
         if (all)
         {
@@ -338,7 +339,7 @@ private:
     }
 
     /// Replace single match.
-    std::string replaceMatch(const std::smatch& match, Rule& rule, size_t& numMatches)
+    [[nodiscard]] std::string replaceMatch(const std::smatch& match, Rule& rule, std::size_t& numMatches)
     {
         std::string r = match.format(rule.rhs);
         if (trace)
@@ -352,9 +353,9 @@ private:
     /// Apply rule to string.
     /// Return number of matches.
     /// Increase rule.numMatches.
-    uint64_t applyRule(std::string& s, Rule& rule)
+    std::uint64_t applyRule(std::string& s, Rule& rule)
     {
-        size_t numMatches = 0;
+        std::size_t numMatches = 0;
 
         if (noRegex)
         {
@@ -370,7 +371,7 @@ private:
     }
 
     /// Print trace or line trace.
-    void printTrace(const std::string& s, const std::string& filename, size_t numMatches)
+    void printTrace(const std::string& s, const std::string& filename, std::size_t numMatches)
     {
         std::cout << escapeSequences.bold << filename << escapeSequences.normal << " (" << escapeSequences.bold << numMatches << escapeSequences.normal << " matches):\n";
 
@@ -381,7 +382,7 @@ private:
         else
         {
             // Line trace.
-            std::vector<std::string> lines = ut1::splitLines(s);
+            const std::vector<std::string> lines = ut1::splitLines(s);
 
             // Mark all lines which contain the escape sequences for matches including context lines.
             std::vector<bool> marked(lines.size());
@@ -431,24 +432,24 @@ private:
 
     bool modifySymlinks{};
 
-    unsigned verbose{};
-    bool     dummyMode{};
-    bool     dummyTrace{};
-    bool     dummyLineTrace{};
-    bool     dummyLineTraceHideSep{};
-    bool     trace{};
-    size_t   context{};
+    unsigned    verbose{};
+    bool        dummyMode{};
+    bool        dummyTrace{};
+    bool        dummyLineTrace{};
+    bool        dummyLineTraceHideSep{};
+    bool        trace{};
+    std::size_t context{};
 
     bool                  modifyFiles{};
     std::vector<Rule>     rules;
     std::regex::flag_type regexFlags{};
 
     /// Statistics.
-    uint64_t numIgnored{};
-    uint64_t numDirs{};
-    uint64_t numFilesRead{};
-    uint64_t numFilesWritten{};
-    uint64_t numSymlinks{};
+    std::uint64_t numIgnored{};
+    std::uint64_t numDirs{};
+    std::uint64_t numFilesRead{};
+    std::uint64_t numFilesWritten{};
+    std::uint64_t numSymlinks{};
 
     EscapeSequences escapeSequences;
 };
@@ -508,7 +509,7 @@ int main(int argc, char* argv[])
         // Parse non-option arguments (paths and rules).
         std::vector<std::filesystem::directory_entry> paths;
         bool                                          allowRules = true;
-        for (const auto& arg: cl.getArgs())
+        for (const std::string& arg: cl.getArgs())
         {
             if (arg.empty())
             {
@@ -554,6 +555,7 @@ int main(int argc, char* argv[])
     catch (const std::exception& e)
     {
         cl.error(e.what());
+        return 1;
     }
 
     return 0;
