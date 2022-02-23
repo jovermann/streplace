@@ -52,15 +52,15 @@ struct UnitTest
 
 void UNIT_TEST_RUN();
 
-# define UNIT_TEST(name)                   \
-  struct UnitTest_##name : public UnitTest \
-  {                                        \
-   UnitTest_##name()                       \
-   : UnitTest(#name, __FILE__, __LINE__)   \
-   {                                       \
-   }                                       \
-   virtual void run() override;            \
-  } UnitTest_instance_##name;              \
+# define UNIT_TEST(name)                  \
+  struct UnitTest_##name: public UnitTest \
+  {                                       \
+   UnitTest_##name()                      \
+   : UnitTest(#name, __FILE__, __LINE__)  \
+   {                                      \
+   }                                      \
+   virtual void run() override;           \
+  } UnitTest_instance_##name;             \
   inline void UnitTest_##name::run()
 
 #else

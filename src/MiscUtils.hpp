@@ -21,16 +21,16 @@ namespace ut1
 // --- String utilities: Operations on one string. ---
 
 /// Has prefix.
-bool hasPrefix(const std::string& s, const std::string& prefix);
+bool hasPrefix(const std::string& s, const std::string& prefix) noexcept;
 
 /// Has suffix.
-bool hasSuffix(const std::string& s, const std::string& suffix);
+bool hasSuffix(const std::string& s, const std::string& suffix) noexcept;
 
 /// Contains character.
-bool contains(const std::string& s, char c);
+bool contains(const std::string& s, char c) noexcept;
 
 /// Contains string.
-bool contains(const std::string& haystack, const std::string& needle);
+bool contains(const std::string& haystack, const std::string& needle) noexcept;
 
 /// Replace substring in place.
 /// If from is empty, s is left unmodified.
@@ -47,7 +47,7 @@ std::string expandUnprintable(const std::string& s, char quotes = 0, char addQuo
 std::string compileCString(const std::string& s, std::string* errorMessageOut = nullptr);
 
 /// Skip whitespace (as in isspace()).
-void skipSpace(const char*& s);
+void skipSpace(const char*& s) noexcept;
 
 /// Convert to lowercase.
 std::string tolower(std::string s);

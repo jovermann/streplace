@@ -7,6 +7,7 @@
 #include <regex>
 #include <iostream>
 #include <filesystem>
+#include <utility>
 #include "CommandLineParser.hpp"
 #include "MiscUtils.hpp"
 #include "UnitTest.hpp"
@@ -26,7 +27,10 @@ public:
 class Error: public std::runtime_error
 {
 public:
-    Error(const std::string& message): std::runtime_error(message) {}
+    explicit Error(const std::string& message)
+    : std::runtime_error(message)
+    {
+    }
 };
 
 /// Rule.
@@ -40,7 +44,7 @@ public:
         {
             throw Error("Rule \"" + rule + "\" must contain exactly one separator '" + separator + "' (got " + std::to_string(sides.size() - 1) + ")." + ((sides.size() >= 2) ? " You can choose a different/unique separator string using --equals to avoid conflicts with the left and right side of the rule." : ""));
         }
-        lhs = sides[0];
+        lhs = std::move(sides[0]);
         rhs = ut1::compileCString(sides[1]);
     }
 
@@ -66,7 +70,7 @@ class Streplace
 {
 public:
     /// Constructor.
-    Streplace(const ut1::CommandLineParser& cl)
+    explicit Streplace(const ut1::CommandLineParser& cl)
     {
         // Get command line options.
         recursive   = cl("recursive");
@@ -218,7 +222,7 @@ private:
 
             // Apply all rules.
             size_t numMatches = 0;
-            for (Rule rule: rules)
+            for (Rule& rule: rules)
             {
                 numMatches += applyRule(data, rule);
             }
@@ -423,9 +427,9 @@ private:
     bool followLinks{};
     bool all{};
 
-    bool ignoreCase{};
-    bool noRegex{};
-    bool wholeWords{};
+    bool        ignoreCase{};
+    bool        noRegex{};
+    bool        wholeWords{};
     std::string equals;
     std::string dollar;
 
@@ -508,7 +512,7 @@ int main(int argc, char* argv[])
         // Parse non-option arguments (paths and rules).
         std::vector<std::filesystem::directory_entry> paths;
         bool                                          allowRules = true;
-        for (const auto& arg: cl.getArgs())
+        for (const std::string& arg: cl.getArgs())
         {
             if (arg.empty())
             {

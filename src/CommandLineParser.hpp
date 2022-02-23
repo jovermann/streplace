@@ -37,7 +37,7 @@ public:
         }
 
         /// Has formal argument.
-        bool hasArg() const { return !argName.empty(); }
+        bool hasArg() const noexcept { return !argName.empty(); }
 
         /// Set value.
         void setValue(const std::string& v, char listSepChar_);
@@ -100,7 +100,7 @@ public:
     double getDouble(const std::string& longOption) const;
 
     /// Get positional args.
-    const std::vector<std::string>& getArgs() const { return args; }
+    const std::vector<std::string>& getArgs() const noexcept { return args; }
 
     /// Set option value from within the program.
     /// This is useful to set logical non-static default values.

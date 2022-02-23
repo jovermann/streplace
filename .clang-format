@@ -22,4 +22,5 @@ MaxEmptyLinesToKeep: 2
 SortIncludes: false
 Cpp11BracedListStyle: true
 SpaceBeforeCpp11BracedList: false
+SpaceBeforeInheritanceColon: false
 ...

@@ -188,7 +188,7 @@ long long CommandLineParser::getInt(const std::string& longOption) const
 {
     std::string value = getStr(longOption);
     const char* end   = nullptr;
-    long long   r     = strtoll(value.c_str(), const_cast<char**>(&end), 0);
+    long long   r     = std::strtoll(value.c_str(), const_cast<char**>(&end), 0);
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {
@@ -202,7 +202,7 @@ unsigned long long CommandLineParser::getUInt(const std::string& longOption) con
 {
     std::string        value = getStr(longOption);
     const char*        end   = nullptr;
-    unsigned long long r     = strtoull(value.c_str(), const_cast<char**>(&end), 0);
+    unsigned long long r     = std::strtoull(value.c_str(), const_cast<char**>(&end), 0);
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {
@@ -216,7 +216,7 @@ double CommandLineParser::getDouble(const std::string& longOption) const
 {
     std::string value = getStr(longOption);
     const char* end   = nullptr;
-    double      r     = strtod(value.c_str(), const_cast<char**>(&end));
+    double      r     = std::strtod(value.c_str(), const_cast<char**>(&end));
     ut1::skipSpace(end);
     if (end && (end != value.c_str()) && (*end == 0))
     {

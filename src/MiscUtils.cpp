@@ -12,7 +12,7 @@ namespace ut1
 {
 
 
-bool hasPrefix(const std::string& s, const std::string& prefix)
+bool hasPrefix(const std::string& s, const std::string& prefix) noexcept
 {
     return s.compare(0, prefix.length(), prefix) == 0;
 }
@@ -28,7 +28,7 @@ UNIT_TEST(hasPrefix)
 }
 
 
-bool hasSuffix(const std::string& s, const std::string& suffix)
+bool hasSuffix(const std::string& s, const std::string& suffix) noexcept
 {
     if (suffix.length() > s.length())
     {
@@ -48,7 +48,7 @@ UNIT_TEST(hasSuffix)
 }
 
 
-bool contains(const std::string& s, char c)
+bool contains(const std::string& s, char c) noexcept
 {
     return s.find(c) != std::string::npos;
 }
@@ -64,7 +64,7 @@ UNIT_TEST(contains)
 }
 
 
-bool contains(const std::string& haystack, const std::string& needle)
+bool contains(const std::string& haystack, const std::string& needle) noexcept
 {
     return haystack.find(needle) != std::string::npos;
 }
@@ -131,7 +131,7 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
 
     for (const char& c: s)
     {
-        if (isprint(unsigned(c)))
+        if (std::isprint(unsigned(c)))
         {
             if ((c == '\\') || (quotes && (c == quotes)))
             {
@@ -157,16 +157,16 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
             default:
                 // Hex/octal byte.
                 char next = *(&c + 1);
-                if (isxdigit(unsigned(next)))
+                if (std::isxdigit(unsigned(next)))
                 {
                     // Next digit is a valid hex digit:
                     // Use 3-digit octal variant to limit the length of the numeric escape sequence.
-                    ::snprintf(buf, sizeof(buf), "%03o", uint8_t(c));
+                    std::snprintf(buf, sizeof(buf), "%03o", uint8_t(c));
                 }
                 else
                 {
                     // Hex byte.
-                    ::snprintf(buf, sizeof(buf), "x%02x", uint8_t(c));
+                    std::snprintf(buf, sizeof(buf), "x%02x", uint8_t(c));
                 }
                 r += buf;
                 break;
@@ -236,9 +236,9 @@ std::string compileCString(const std::string& s, std::string* errorMessageOut)
 
                 // Hex.
             case 'x':
-                if (isxdigit(unsigned(p[0])))
+                if (std::isxdigit(unsigned(p[0])))
                 {
-                    c = strtoul(p, const_cast<char**>(&end), 16);
+                    c = std::strtoul(p, const_cast<char**>(&end), 16);
                     p = end;
                 }
                 else
@@ -265,7 +265,7 @@ std::string compileCString(const std::string& s, std::string* errorMessageOut)
                 buf[1] = p[0];
                 buf[2] = p[0] ? p[1] : 0;
                 buf[3] = 0;
-                c      = strtoul(buf, const_cast<char**>(&end), 8);
+                c      = std::strtoul(buf, const_cast<char**>(&end), 8);
                 p += end - buf - 1;
                 break;
 
@@ -442,7 +442,7 @@ std::vector<std::string> splitLines(const std::string& s, size_t wrapCol)
             firstPart = true;
             continue;
         }
-        if (isspace(unsigned(s[pos])))
+        if (std::isspace(unsigned(s[pos])))
         {
             splitPos = pos + 1;
         }
@@ -549,11 +549,11 @@ UNIT_TEST(regex_replace)
 }
 
 
-void skipSpace(const char*& s)
+void skipSpace(const char*& s) noexcept
 {
     if (s)
     {
-        while (isspace(uint8_t(*s)))
+        while (std::isspace(uint8_t(*s)))
         {
             s++;
         }
