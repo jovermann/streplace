@@ -37,7 +37,7 @@ public:
 class Rule
 {
 public:
-    explicit Rule(const std::string& rule, const std::string& separator)
+    Rule(const std::string& rule, const std::string& separator, bool noRegex)
     {
         std::vector<std::string> sides = ut1::splitString(rule, separator);
         if (sides.size() != 2)
@@ -46,6 +46,10 @@ public:
         }
         lhs = std::move(sides[0]);
         rhs = ut1::compileCString(sides[1]);
+        if (noRegex)
+        {
+            lhs = ut1::quoteRegexChars(lhs);
+        }
     }
 
     std::string lhs;
@@ -124,7 +128,7 @@ public:
     /// Add rule.
     void addRule(const std::string& rule)
     {
-        rules.emplace_back(rule, equals);
+        rules.emplace_back(rule, equals, noRegex);
     }
 
     /// Print rules.
@@ -209,38 +213,43 @@ private:
     /// Process regular file.
     void processRegularFile(const std::filesystem::directory_entry& directoryEntry)
     {
-        if (modifyFiles)
+        if (!modifyFiles)
         {
             if (verbose)
             {
-                std::cout << "Processing " << directoryEntry.path() << ut1::flushTty;
+                std::cout << "Ignoring file " << directoryEntry.path() << ".\n";
             }
+            numIgnored++;
+            return;
+        }
 
-            // Read file.
-            std::string data = ut1::readFile(directoryEntry.path());
-            numFilesRead++;
+        if (verbose)
+        {
+            std::cout << "Processing " << directoryEntry.path() << ut1::flushTty;
+        }
 
-            // Apply all rules.
-            size_t numMatches = 0;
-            for (Rule& rule: rules)
+        // Read file.
+        std::string data = ut1::readFile(directoryEntry.path());
+        numFilesRead++;
+
+        // Apply all rules.
+        size_t numMatches = 0;
+        for (Rule& rule: rules)
+        {
+            numMatches += applyRule(data, rule);
+        }
+
+        if (verbose)
+        {
+            if (numMatches)
             {
-                numMatches += applyRule(data, rule);
+                std::cout << " (" << numMatches << ")";
             }
+            std::cout << "\n";
+        }
 
-            if (verbose)
-            {
-                if (numMatches)
-                {
-                    std::cout << " (" << numMatches << ")";
-                }
-                std::cout << "\n";
-            }
-
-            if (numMatches == 0)
-            {
-                return;
-            }
-
+        if (numMatches)
+        {
             // Write file.
             numFilesWritten++;
             if (!dummyMode)
@@ -255,14 +264,6 @@ private:
                 printTrace(data, directoryEntry.path(), numMatches);
             }
         }
-        else
-        {
-            if (verbose)
-            {
-                std::cout << "Ignoring file " << directoryEntry.path() << ".\n";
-            }
-            numIgnored++;
-        }
     }
 
     /// Process symlink.
@@ -274,6 +275,7 @@ private:
             {
                 std::cout << "Processing symlink " << directoryEntry.path() << ".\n";
             }
+            // todo
             numSymlinks++;
         }
         else
@@ -360,14 +362,8 @@ private:
     {
         size_t numMatches = 0;
 
-        if (noRegex)
-        {
-        }
-        else
-        {
-            s = ut1::regex_replace(s, std::regex(rule.lhs), [&](const std::smatch& match)
-                { return replaceMatch(match, rule, numMatches); });
-        }
+        s = ut1::regex_replace(s, std::regex(rule.lhs), [&](const std::smatch& match)
+                           { return replaceMatch(match, rule, numMatches); });
 
         rule.numMatches += numMatches;
         return numMatches;
@@ -406,7 +402,7 @@ private:
             // Print all marked lines.
             for (size_t line = 0; line < lines.size(); line++)
             {
-                if ((!dummyLineTraceHideSep) && ((line == 0) || (marked[line] && (!marked[line - 1]))))
+                if ((!dummyLineTraceHideSep) && (marked[line] && ((line == 0) || (!marked[line - 1]))))
                 {
                     std::cout << escapeSequences.thin << "--" << line + 1 << "--" << escapeSequences.normal << "\n";
                 }

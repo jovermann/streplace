@@ -61,6 +61,10 @@ std::string capitalize(std::string s);
 /// Add trailing LF if missing.
 void addTrailingLfIfMissing(std::string& s);
 
+/// Convert a string to a regex matching itself by backslash escaping all
+/// regex special chars.
+std::string quoteRegexChars(const std::string& s);
+
 // --- String utilities: Misc. ---
 
 /// Split string at separator char.

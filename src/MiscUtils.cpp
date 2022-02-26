@@ -650,6 +650,30 @@ UNIT_TEST(addTrailingLfIfMissing)
 }
 
 
+std::string quoteRegexChars(const std::string& s)
+{
+    std::string r;
+    const std::string special = "[](){}^$.*+|?\\";
+    for (char c: s)
+    {
+        if (special.find(c) != std::string::npos)
+        {
+            r += '\\';
+        }
+        r += c;
+    }
+    return r;
+}
+
+
+UNIT_TEST(quouteRegexChars)
+{
+    std::string r = "^[F][O][O]a.a*a+a|a?a{}a()a?\\$";
+    ASSERT_EQ(ut1::regex_replace("A" + r + "B", std::regex(quoteRegexChars(r)), [&](const std::smatch&)
+                             { return "X"; }), "AXB");
+}
+
+
 std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v)
 {
     s << "{";
