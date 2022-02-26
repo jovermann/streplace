@@ -16,6 +16,7 @@
 namespace ut1
 {
 
+#define HEADER_PREFIX "header:"
 
 void CommandLineParser::Option::setValue(const std::string& v, char listSepChar_)
 {
@@ -57,7 +58,7 @@ CommandLineParser::CommandLineParser(const std::string& programName_, const std:
 void CommandLineParser::addHeader(const std::string& header)
 {
     // Keep --help and --version at the end of the list.
-    optionList.insert(optionList.begin() + optionList.size() - std::min(optionList.size(), size_t(2)), "header:" + header);
+    optionList.insert(optionList.end() - std::min(optionList.size(), size_t(2)), HEADER_PREFIX + header);
 }
 
 
@@ -91,7 +92,7 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
 
     options[longOption] = opt;
     // Keep --help and --version at the end of the list.
-    optionList.insert(optionList.begin() + optionList.size() - std::min(optionList.size(), size_t(2)), longOption);
+    optionList.insert(optionList.end() - std::min(optionList.size(), size_t(2)), longOption);
     return options[longOption];
 }
 
@@ -285,9 +286,9 @@ std::string CommandLineParser::getUsageStr()
     for (const auto& name: optionList)
     {
         // Print option header.
-        if (ut1::hasPrefix(name, "header:"))
+        if (ut1::hasPrefix(name, HEADER_PREFIX))
         {
-            ret << name.substr(7);
+            ret << name.substr(strlen(HEADER_PREFIX));
             continue;
         }
 
@@ -395,7 +396,7 @@ void CommandLineParser::parseLongOption(int argc, char* argv[], int& i)
         std::vector<std::string> matchingOptions;
         for (const auto& optName: optionList)
         {
-            if (ut1::hasPrefix(optName, longOption))
+            if (ut1::hasPrefix(optName, longOption) && (!ut1::hasPrefix(optName, HEADER_PREFIX)))
             {
                 matchingOptions.push_back(optName);
             }

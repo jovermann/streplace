@@ -363,7 +363,7 @@ private:
         size_t numMatches = 0;
 
         s = ut1::regex_replace(s, std::regex(rule.lhs), [&](const std::smatch& match)
-                           { return replaceMatch(match, rule, numMatches); });
+            { return replaceMatch(match, rule, numMatches); });
 
         rule.numMatches += numMatches;
         return numMatches;
