@@ -346,6 +346,17 @@ private:
     /// Replace single match.
     std::string replaceMatch(const std::smatch& match, Rule& rule, size_t& numMatches)
     {
+        // --whole-words
+        if (wholeWords && match.length())
+        {
+            if ((ut1::isalnum_(match.str()[0]) && match.prefix().length() && ut1::isalnum_(match.prefix().str().back())) || (ut1::isalnum_(match.str().back()) && match.suffix().length() && ut1::isalnum_(match.suffix().str()[0])))
+            {
+                // Ignore match, return original string.
+                return match.str();
+            }
+        }
+
+        // Format according to rhs and return replacement string.
         std::string r = match.format(rule.rhs);
         if (trace)
         {
@@ -472,7 +483,7 @@ int main(int argc, char* argv[])
                                            "\n",
         "\n"
         "$programName version $version *** Copyright (c) 2021-2022 Johannes Overmann *** https://github.com/jovermann/streplace",
-        "0.10.1");
+        "0.10.2");
 
     cl.addHeader("\nFile options:\n");
     cl.addOption('r', "recursive", "Recursively process directories.");
@@ -482,7 +493,7 @@ int main(int argc, char* argv[])
     cl.addHeader("\nMatching options:\n");
     cl.addOption('i', "ignore-case", "Ignore case.");
     cl.addOption('x', "no-regex", "Match the left side of each rule as a simple string, not as a regex (substring search, useful with binary files).");
-    cl.addOption('w', "whole-words", "Match only whole words (only for -x mode, not for regex).");
+    cl.addOption('w', "whole-words", "Match only whole words. A word is an alphanumeric seuqnece with underscores. If the match begins/ends with a non-word char then this is always considered to be a word boundary, e.g. 'foo;' matches '::foo;' but not 'barfoo;'.");
     cl.addOption(' ', "equals", "Use STR instead of \"=\" as the rule lhs/rhs-separator, e.g. fooSTRbar. This may be one or more chars long. Example: --equals==== allows rules to have the form \"int a = 0;===unsigned a = 0;\"", "STR", "=");
     cl.addOption(' ', "dollar", "Use STR instead of \"$\" in substring references in the replacement string, e.g. STR&, STR1, STR12. This may be one or more chars long. Example: --dollar=SUB for \"0x([0-9A-Za-z]+)=$SUB1\"", "STR", "$");
 

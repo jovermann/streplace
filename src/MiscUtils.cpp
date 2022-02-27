@@ -624,6 +624,15 @@ UNIT_TEST(capitalize)
 }
 
 
+UNIT_TEST(isalnum_)
+{
+    ASSERT_EQ(isalnum_('_'), true);
+    ASSERT_EQ(isalnum_('a'), true);
+    ASSERT_EQ(isalnum_('0'), true);
+    ASSERT_EQ(isalnum_(' '), false);
+}
+
+
 void addTrailingLfIfMissing(std::string& s)
 {
     if (s.empty() || (s.back() != '\n'))

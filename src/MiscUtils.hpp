@@ -58,6 +58,12 @@ std::string toupper(std::string s);
 /// Capitalize (first char uppercase, rest lowercase).
 std::string capitalize(std::string s);
 
+/// isalnum() with _.
+inline bool isalnum_(char c) noexcept
+{
+    return std::isalnum(unsigned(c)) || (c == '_');
+}
+
 /// Add trailing LF if missing.
 void addTrailingLfIfMissing(std::string& s);
 
