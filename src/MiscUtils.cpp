@@ -662,7 +662,7 @@ UNIT_TEST(addTrailingLfIfMissing)
 std::string quoteRegexChars(const std::string& s)
 {
     std::string       r;
-    const std::string special = "[](){}^$.*+|?\\";
+    const std::string special = "[](){}^$.*+|?";
     for (char c: s)
     {
         if (special.find(c) != std::string::npos)
