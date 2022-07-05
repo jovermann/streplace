@@ -4,7 +4,9 @@
 //
 // This file is released under the MIT license. See LICENSE for license.
 
+#ifndef _WIN32
 #include <unistd.h>
+#endif
 #include "MiscUtils.hpp"
 #include "UnitTest.hpp"
 
@@ -131,7 +133,7 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
 
     for (const char& c: s)
     {
-        if (std::isprint(unsigned(c)))
+        if (std::isprint((unsigned char)(c)))
         {
             if ((c == '\\') || (quotes && (c == quotes)))
             {
@@ -198,15 +200,19 @@ std::string compileCString(const std::string& s, std::string* errorMessageOut)
     std::string r;
     const char* p = s.c_str();
     const char* end;
-    char        c;
     char        buf[4];
 
     if (errorMessageOut)
     {
         errorMessageOut->clear();
     }
-    while ((c = *(p++)))
+    for (;;)
     {
+        char c = *(p++);
+        if (c == 0)
+        {
+            break;
+        }
         if (c == '\\')
         {
             // Escape sequence.
@@ -238,7 +244,7 @@ std::string compileCString(const std::string& s, std::string* errorMessageOut)
             case 'x':
                 if (std::isxdigit(unsigned(p[0])))
                 {
-                    c = std::strtoul(p, const_cast<char**>(&end), 16);
+                    c = char(std::strtoul(p, const_cast<char**>(&end), 16));
                     p = end;
                 }
                 else
@@ -265,7 +271,7 @@ std::string compileCString(const std::string& s, std::string* errorMessageOut)
                 buf[1] = p[0];
                 buf[2] = p[0] ? p[1] : 0;
                 buf[3] = 0;
-                c      = std::strtoul(buf, const_cast<char**>(&end), 8);
+                c      = char(std::strtoul(buf, const_cast<char**>(&end), 8));
                 p += end - buf - 1;
                 break;
 
@@ -571,8 +577,8 @@ UNIT_TEST(skipSpace)
 
 std::string tolower(std::string s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
-        { return std::tolower(c); });
+    std::transform(s.begin(), s.end(), s.begin(), [](char c)
+        { return char(std::tolower((unsigned char)c)); });
     return s;
 }
 
@@ -587,8 +593,8 @@ UNIT_TEST(tolower)
 
 std::string toupper(std::string s)
 {
-    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c)
-        { return std::toupper(c); });
+    std::transform(s.begin(), s.end(), s.begin(), [](char c)
+        { return char(std::toupper((unsigned char)c)); });
     return s;
 }
 
@@ -606,7 +612,7 @@ std::string capitalize(std::string s)
     s = tolower(s);
     if (!s.empty())
     {
-        s[0] = std::toupper(unsigned(s[0]));
+        s[0] = char(std::toupper(unsigned(s[0])));
     }
     return s;
 }
@@ -662,7 +668,7 @@ UNIT_TEST(addTrailingLfIfMissing)
 std::string quoteRegexChars(const std::string& s)
 {
     std::string       r;
-    const std::string special = "[](){}^$.*+|?";
+    const std::string special = "[](){}^$.*+|?\\";
     for (char c: s)
     {
         if (special.find(c) != std::string::npos)
@@ -732,7 +738,11 @@ std::ostream& flushTty(std::ostream& os)
 std::string readFile(const std::string& filename)
 {
     std::ifstream is(filename, std::ios::in | std::ios::binary | std::ios::ate);
-    size_t        size = is.tellg();
+    if (!is)
+    {
+        throw std::runtime_error("readFile(" + filename + "): Error while opening file for reading.");
+    }
+    size_t size = is.tellg();
     is.seekg(0, is.beg);
     std::string r(size, '\0');
     is.read(&r[0], size);
@@ -743,13 +753,17 @@ std::string readFile(const std::string& filename)
 void writeFile(const std::string& filename, const std::string& data)
 {
     std::ofstream os(filename, std::ios::out | std::ios::binary | std::ios::trunc);
+    if (!os)
+    {
+        throw std::runtime_error("writeFile(" + filename + "): Error while opneing file for writing.");
+    }
     os.write(data.data(), data.size());
 }
 
 
-UNIT_TEST(readFile_WriteFile)
+UNIT_TEST(readFile_writeFile)
 {
-    std::string filename = "/tmp/UtilitiesTest";
+    std::string filename = "MiscUtilsTmp";
     writeFile(filename, "abc");
     std::string s = readFile(filename);
     ASSERT_EQ(s, "abc");

@@ -308,7 +308,7 @@ std::string CommandLineParser::getUsageStr()
             nameEqArg += "=" + option->argName;
         }
         ret << " --" << nameEqArg;
-        int pad = std::max(size_t(0), maxHelpNameLen - nameEqArg.length()) + 1;
+        size_t pad = std::max(size_t(0), maxHelpNameLen - nameEqArg.length()) + 1;
         ret << std::string(pad, ' ');
         lines = ut1::splitLines(option->help, helpWrapCol);
         ret << ut1::joinStrings(lines, "\n" + std::string(helpStartCol, ' '));

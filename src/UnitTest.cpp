@@ -47,7 +47,15 @@ int UnitTestRegistry::runTests()
     for (const auto& kv: getUnitTestRegistry()->tests)
     {
         std::cout << "Test " << kv.second->getTestName() << std::string(maxNameLen - kv.second->getTestName().length() + 1, ' ');
-        kv.second->run();
+        try
+        {
+            kv.second->run();
+        }
+        catch (const std::exception& e)
+        {
+            std::cout << std::string("Error: Exception: ") + e.what() + "\n";
+            assert(!"exception caught");
+        }
         std::cout << "OK\n";
         numTests++;
     }

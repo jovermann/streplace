@@ -14,6 +14,9 @@
 
 #ifdef ENABLE_UNIT_TEST
 
+// Always enable asserts() when running unit tests.
+#undef NDEBUG
+
 struct UnitTest;
 
 class UnitTestRegistry

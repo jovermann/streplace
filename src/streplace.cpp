@@ -23,7 +23,6 @@ public:
 
 
 /// Error exception.
-#pragma GCC diagnostic ignored "-Wweak-vtables"
 class Error: public std::runtime_error
 {
 public:
@@ -217,7 +216,7 @@ private:
         {
             if (verbose)
             {
-                std::cout << "Ignoring file " << directoryEntry.path() << ".\n";
+                std::cout << "Ignoring file " << directoryEntry.path().string() << ".\n";
             }
             numIgnored++;
             return;
@@ -225,11 +224,11 @@ private:
 
         if (verbose)
         {
-            std::cout << "Processing " << directoryEntry.path() << ut1::flushTty;
+            std::cout << "Processing " << directoryEntry.path().string() << ut1::flushTty;
         }
 
         // Read file.
-        std::string data = ut1::readFile(directoryEntry.path());
+        std::string data = ut1::readFile(directoryEntry.path().string());
         numFilesRead++;
 
         // Apply all rules.
@@ -254,14 +253,14 @@ private:
             numFilesWritten++;
             if (!dummyMode)
             {
-                ut1::writeFile(directoryEntry.path(), data);
+                ut1::writeFile(directoryEntry.path().string(), data);
             }
 
             // Trace.
             if (trace)
             {
                 ut1::addTrailingLfIfMissing(data);
-                printTrace(data, directoryEntry.path(), numMatches);
+                printTrace(data, directoryEntry.path().string(), numMatches);
             }
         }
     }

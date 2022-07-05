@@ -14,10 +14,13 @@
 #include <cctype>
 #include <regex>
 
+#ifdef _WIN32
+using ssize_t = ptrdiff_t;
+#define isatty(fd) ((fd) == 1)
+#endif
+
 namespace ut1
 {
-
-
 // --- String utilities: Operations on one string. ---
 
 /// Has prefix.
