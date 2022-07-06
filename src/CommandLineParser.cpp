@@ -141,12 +141,14 @@ void CommandLineParser::parse(int argc, char* argv[])
 
     if (isSet("help"))
     {
-        printMessage(getUsageStr(), 0, true);
+        printMessage(getUsageStr());
+        std::exit(0);
     }
 
     if (isSet("version"))
     {
-        printMessage("version " + version, 0, true);
+        printMessage("version " + version);
+        std::exit(0);
     }
 }
 
@@ -179,7 +181,7 @@ const std::string& CommandLineParser::getStr(const std::string& longOption) cons
 }
 
 
-std::vector<std::string> CommandLineParser::getList(const std::string& longOption)
+std::vector<std::string> CommandLineParser::getList(const std::string& longOption) const
 {
     return ut1::splitString(getStr(longOption), listSepChar);
 }
@@ -245,24 +247,20 @@ void CommandLineParser::setValue(const std::string& longOption, const std::strin
 }
 
 
-int CommandLineParser::error(const std::string& message)
+void CommandLineParser::error(const std::string& message, int exitStatus) const
 {
-    return printMessage("Error: " + message, 1, true);
+    printMessage("Error: " + message);
+    std::exit(exitStatus);
 }
 
 
-int CommandLineParser::printMessage(const std::string& message, int exitStatus, bool exit)
+void CommandLineParser::printMessage(const std::string& message) const
 {
     std::cout << programName << ": " << message << "\n";
-    if (exit)
-    {
-        std::exit(exitStatus);
-    }
-    return exitStatus;
 }
 
 
-std::string CommandLineParser::getUsageStr()
+std::string CommandLineParser::getUsageStr() const
 {
     std::stringstream ret;
 
@@ -415,6 +413,7 @@ void CommandLineParser::parseLongOption(int argc, char* argv[], int& i)
             error("Ambiguous option --" + longOption + " (matches --" + ut1::joinStrings(matchingOptions, ", --") + ").");
         }
     }
+
     if (option->hasArg())
     {
         if (fields.size() == 2)

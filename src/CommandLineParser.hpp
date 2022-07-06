@@ -88,7 +88,7 @@ public:
     const std::string& getStr(const std::string& longOption) const;
 
     /// Get string list;
-    std::vector<std::string> getList(const std::string& longOption);
+    std::vector<std::string> getList(const std::string& longOption) const;
 
     /// Get signed int value.
     long long getInt(const std::string& longOption) const;
@@ -106,14 +106,14 @@ public:
     /// This is useful to set logical non-static default values.
     void setValue(const std::string& longOption, const std::string& value, bool clearList = true);
 
-    /// Print error and potentially exit.
-    int error(const std::string& message);
+    /// Print error and exit.
+    [[noreturn]] void error(const std::string& message, int exitStatus = 1) const;
 
     /// Print message and potentially exit.
-    int printMessage(const std::string& message, int exitStatus = 0, bool exit = false);
+    void printMessage(const std::string& message) const;
 
     /// Get usage string.
-    std::string getUsageStr();
+    std::string getUsageStr() const;
 
 private:
     /// Get option.
