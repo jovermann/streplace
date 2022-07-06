@@ -52,20 +52,29 @@ std::string compileCString(const std::string& s, std::string* errorMessageOut = 
 /// Skip whitespace (as in isspace()).
 void skipSpace(const char*& s) noexcept;
 
-/// Convert to lowercase.
+/// Convert char to lowercase.
+inline char tolower(char c) { return char(std::tolower(static_cast<unsigned char>(c))); }
+
+/// Convert string to lowercase.
 std::string tolower(std::string s);
 
-/// Convert to uppercase.
+/// Convert char to uppercase.
+inline char toupper(char c) { return char(std::toupper(static_cast<unsigned char>(c))); }
+
+/// Convert string to uppercase.
 std::string toupper(std::string s);
 
 /// Capitalize (first char uppercase, rest lowercase).
 std::string capitalize(std::string s);
 
-/// isalnum() with _.
-inline bool isalnum_(char c) noexcept
-{
-    return std::isalnum(unsigned(c)) || (c == '_');
-}
+/// Sane isalnum().
+inline bool isalnum(char c) noexcept { return std::isalnum(static_cast<unsigned char>(c)); }
+
+/// Sane isalnum() with _.
+inline bool isalnum_(char c) noexcept { return isalnum(c) || (c == '_'); }
+
+/// Sane isprint().
+inline bool isprint(char c) noexcept { return std::isprint(static_cast<unsigned char>(c)); }
 
 /// Add trailing LF if missing.
 void addTrailingLfIfMissing(std::string& s);
@@ -168,6 +177,13 @@ inline std::string toStr(const char* s)
 /// performance impact. Use this to suppress flushes whiuch are just
 /// inserted to progress output to the same line.)
 std::ostream& flushTty(std::ostream& os);
+
+/// Get plural s or not.
+/// (Note that not all nouns get their plural by appending an s.)
+inline std::string pluralS(size_t n, const std::string& pluralSuffix = "s", const std::string& singularSuffix = std::string())
+{
+    return (n == 1) ? singularSuffix : pluralSuffix;
+}
 
 
 // --- File utilities. ---

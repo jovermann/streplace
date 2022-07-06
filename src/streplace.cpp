@@ -30,7 +30,11 @@ public:
     : std::runtime_error(message)
     {
     }
+
+    virtual ~Error();
 };
+
+Error::~Error() { }
 
 /// Rule.
 class Rule
@@ -86,7 +90,6 @@ public:
         equals     = cl.getStr("equals");
         dollar     = cl.getStr("dollar");
 
-        modifySymlinks = cl("modify-symlinks");
 
         verbose               = cl.getCount("verbose");
         dummyMode             = cl("dummy-mode");
@@ -95,8 +98,21 @@ public:
         dummyLineTraceHideSep = ut1::hasPrefix(cl.getStr("context"), "+");
         context               = cl.getUInt("context");
 
+        // Derive rename/symlink/file content mode.
+        modifySymlinks = cl("modify-symlinks");
+        rename = cl("rename") || cl("rename-only");
+        modifyFiles = (!modifySymlinks) && (!cl("rename-only"));
+        if (modifySymlinks && rename)
+        {
+            throw Error("--modify-symlinks cannot be combined with --rename or --rename-only");
+        }
+        if (cl("rename") && cl("rename-only"))
+        {
+            throw Error("--rename cannot be combined with --rename-only");
+        }
+
+
         // Implicit options.
-        modifyFiles = !modifySymlinks;
         dummyMode |= dummyTrace || dummyLineTrace;
         trace = dummyTrace || dummyLineTrace;
 
@@ -167,7 +183,31 @@ public:
     /// Print statistics.
     void printStats()
     {
-        std::cout << "(" << numFilesRead << " files, " << numDirs << " dirs and " << numSymlinks << " symlinks processed and " << numIgnored << " directory entries ignored.)\n";
+        std::vector<std::string> l;
+        if (numFilesProcessed)
+        {
+            l.push_back(std::to_string(numFilesModified) + "/" + std::to_string(numFilesProcessed) + " file" + ut1::pluralS(numFilesModified) + " modified");
+        }
+        if (numSymlinksProcessed)
+        {
+            l.push_back(std::to_string(numSymlinksModified) + "/" + std::to_string(numSymlinksProcessed) + " symlink" + ut1::pluralS(numSymlinksModified) + " modified");
+        }
+        if (numFilesRenamed)
+        {
+            l.push_back(std::to_string(numFilesRenamed) + "/" + std::to_string(numFilesProcessed) + " file" + ut1::pluralS(numFilesRenamed) + " renamed");
+        }
+        if (numDirsRenamed)
+        {
+            l.push_back(std::to_string(numDirsRenamed) + "/" + std::to_string(numDirsProcessed) + " dir" + ut1::pluralS(numDirsRenamed) + " renamed");
+        }
+        else if (numDirsProcessed)
+        {
+            l.push_back(std::to_string(numDirsProcessed) + " dir" + ut1::pluralS(numDirsProcessed) + " processed");
+        }
+        if (!l.empty())
+        {
+            std::cout << "(" << ut1::joinStrings(l, ", ") << ")\n";
+        }
     }
 
 private:
@@ -209,12 +249,28 @@ private:
         }
     }
 
+    /// Apply all rules.
+    std::string applyAllRules(const std::string& input, size_t* numMatchesOut = nullptr)
+    {
+        std::string r = input;
+        size_t numMatches = 0;
+        for (Rule& rule: rules)
+        {
+            numMatches += applyRule(r, rule);
+        }
+        if (numMatchesOut)
+        {
+            *numMatchesOut = numMatches;
+        }
+        return r;
+    }
+
     /// Process regular file.
     void processRegularFile(const std::filesystem::directory_entry& directoryEntry)
     {
         if (!modifyFiles)
         {
-            if (verbose)
+            if (verbose >= 2)
             {
                 std::cout << "Ignoring file " << directoryEntry.path().string() << ".\n";
             }
@@ -222,21 +278,18 @@ private:
             return;
         }
 
-        if (verbose)
+        if (verbose >= 2)
         {
             std::cout << "Processing " << directoryEntry.path().string() << ut1::flushTty;
         }
 
         // Read file.
         std::string data = ut1::readFile(directoryEntry.path().string());
-        numFilesRead++;
+        numFilesProcessed++;
 
         // Apply all rules.
         size_t numMatches = 0;
-        for (Rule& rule: rules)
-        {
-            numMatches += applyRule(data, rule);
-        }
+        applyAllRules(data, &numMatches);
 
         if (verbose)
         {
@@ -250,7 +303,7 @@ private:
         if (numMatches)
         {
             // Write file.
-            numFilesWritten++;
+            numFilesModified++;
             if (!dummyMode)
             {
                 ut1::writeFile(directoryEntry.path().string(), data);
@@ -270,16 +323,30 @@ private:
     {
         if (modifySymlinks)
         {
-            if (verbose)
+            if (verbose >= 2)
             {
-                std::cout << "Processing symlink " << directoryEntry.path() << ".\n";
+                std::cout << "Processing symlink " << directoryEntry.path().string() << ".\n";
             }
-            // todo
-            numSymlinks++;
+            std::string oldp = std::filesystem::read_symlink(directoryEntry);
+            std::string newp = applyAllRules(oldp);
+            if (newp != oldp)
+            {
+                if (verbose)
+                {
+                    std::cout << "Modifying symlink target of " << directoryEntry.path().string() << ": " << oldp << " -> " << newp << ".\n";
+                }
+                if (!dummyMode)
+                {
+                    std::filesystem::remove(directoryEntry);
+                    std::filesystem::create_symlink(newp, directoryEntry);
+                }
+                numSymlinksModified++;
+            }
+            numSymlinksProcessed++;
         }
         else
         {
-            if (verbose)
+            if (verbose >= 2)
             {
                 std::cout << "Ignoring symlink " << directoryEntry.path() << ".\n";
             }
@@ -292,9 +359,9 @@ private:
     {
         if (recursive && (!skipDir(directoryEntry.path())))
         {
-            if (verbose)
+            if (verbose >= 2)
             {
-                std::cout << "Processing dir  " << directoryEntry.path() << ".\n";
+                std::cout << "Processing dir " << directoryEntry.path().string() << ".\n";
             }
 
             // Note: Take a copy of each directory_entry intentionally,
@@ -304,13 +371,13 @@ private:
                 processDirectoryEntry(entry);
             }
 
-            numDirs++;
+            numDirsProcessed++;
         }
         else
         {
             if (verbose)
             {
-                std::cout << "Ignoring   dir  " << directoryEntry.path() << ".\n";
+                std::cout << "Ignoring dir " << directoryEntry.path().string() << ".\n";
             }
             numIgnored++;
         }
@@ -321,7 +388,7 @@ private:
     {
         if (verbose)
         {
-            std::cout << "Ignoring   " << getFileTypeStr(directoryEntry) << " '" << directoryEntry.path() << "'.\n";
+            std::cout << "Ignoring " << getFileTypeStr(directoryEntry) << " " << directoryEntry.path().string() << ".\n";
         }
         numIgnored++;
     }
@@ -433,14 +500,6 @@ private:
     bool followLinks{};
     bool all{};
 
-    bool        ignoreCase{};
-    bool        noRegex{};
-    bool        wholeWords{};
-    std::string equals;
-    std::string dollar;
-
-    bool modifySymlinks{};
-
     unsigned verbose{};
     bool     dummyMode{};
     bool     dummyTrace{};
@@ -449,16 +508,29 @@ private:
     bool     trace{};
     size_t   context{};
 
-    bool                  modifyFiles{};
+    /// Main operations.
+    bool modifyFiles{};
+    bool rename{};
+    bool modifySymlinks{};
+
+    /// Matching options.
     std::vector<Rule>     rules;
     std::regex::flag_type regexFlags{};
+    bool ignoreCase{};
+    bool noRegex{};
+    bool wholeWords{};
+    std::string equals;
+    std::string dollar;
 
     /// Statistics.
     uint64_t numIgnored{};
-    uint64_t numDirs{};
-    uint64_t numFilesRead{};
-    uint64_t numFilesWritten{};
-    uint64_t numSymlinks{};
+    uint64_t numFilesProcessed{};
+    uint64_t numFilesModified{};
+    uint64_t numFilesRenamed{};
+    uint64_t numSymlinksProcessed{};
+    uint64_t numSymlinksModified{};
+    uint64_t numDirsProcessed{};
+    uint64_t numDirsRenamed{};
 
     EscapeSequences escapeSequences;
 };
@@ -497,8 +569,9 @@ int main(int argc, char* argv[])
     cl.addOption(' ', "dollar", "Use STR instead of \"$\" in substring references in the replacement string, e.g. STR&, STR1, STR12. This may be one or more chars long. Example: --dollar=SUB for \"0x([0-9A-Za-z]+)=$SUB1\"", "STR", "$");
 
     cl.addHeader("\nRenaming options:\n");
-    cl.addOption('A', "rename", "Rename files and dirs in addition to modifying files contents. Use -N if you only want to rename and not modify the file content.");
-    cl.addOption('s', "modify-symlinks", "Modify the path symlinks point to instead of file content and/or filename.");
+    cl.addOption('N', "rename-only", "Rename files and dirs. Do not modify files contents.");
+    cl.addOption('A', "rename", "Rename files and dirs and modify files contents.");
+    cl.addOption('s', "modify-symlinks", "Modify the path symlinks point to. Do not modify files contents. Do not rename. -N, -A and -s are mutually exclusive.");
 
     cl.addHeader("\nVerbose / common options:\n");
     cl.addOption('v', "verbose", "Increase verbosity. Specify multiple times to be more verbose.");

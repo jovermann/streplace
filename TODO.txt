@@ -1,3 +1,5 @@
+Rename trace to preview
+
 Options of streplace 0.9: (only a subset of these will be implemented)
 
 or:    streplace [OPTIONS and RULES] -       (read from stdin/write to stdout)

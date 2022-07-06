@@ -133,7 +133,7 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
 
     for (const char& c: s)
     {
-        if (std::isprint((unsigned char)(c)))
+        if (isprint(c))
         {
             if ((c == '\\') || (quotes && (c == quotes)))
             {
@@ -578,12 +578,19 @@ UNIT_TEST(skipSpace)
 std::string tolower(std::string s)
 {
     std::transform(s.begin(), s.end(), s.begin(), [](char c)
-        { return char(std::tolower((unsigned char)c)); });
+        { return tolower(c); });
     return s;
 }
 
 
-UNIT_TEST(tolower)
+UNIT_TEST(tolower_char)
+{
+    ASSERT_EQ(tolower('A'), 'a');
+    ASSERT_EQ(tolower('\xc1'), '\xc1');
+}
+
+
+UNIT_TEST(tolower_string)
 {
     ASSERT_EQ(tolower("ABC"), "abc");
     ASSERT_EQ(tolower("\xff\x80 C"), "\xff\x80 c");
@@ -594,12 +601,19 @@ UNIT_TEST(tolower)
 std::string toupper(std::string s)
 {
     std::transform(s.begin(), s.end(), s.begin(), [](char c)
-        { return char(std::toupper((unsigned char)c)); });
+        { return toupper(c); });
     return s;
 }
 
 
-UNIT_TEST(toupper)
+UNIT_TEST(toupper_char)
+{
+    ASSERT_EQ(toupper('a'), 'A');
+    ASSERT_EQ(toupper('\xc1'), '\xc1');
+}
+
+
+UNIT_TEST(toupper_string)
 {
     ASSERT_EQ(toupper("abc"), "ABC");
     ASSERT_EQ(toupper("\xff\x80 c"), "\xff\x80 C");
