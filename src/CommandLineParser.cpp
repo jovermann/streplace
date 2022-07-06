@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <functional>
 #include <iostream>
+#include <cassert>
 #include "CommandLineParser.hpp"
 
 namespace ut1
@@ -413,6 +414,9 @@ void CommandLineParser::parseLongOption(int argc, char* argv[], int& i)
             error("Ambiguous option --" + longOption + " (matches --" + ut1::joinStrings(matchingOptions, ", --") + ").");
         }
     }
+
+    // We only get here when we had an exact match or a unique prefix.
+    assert(option != nullptr);
 
     if (option->hasArg())
     {
