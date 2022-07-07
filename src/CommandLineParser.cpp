@@ -90,8 +90,13 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
     opt.argName      = argName;
     opt.defaultValue = defaultValue;
     opt.value        = defaultValue;
+    opt.parent       = this;
 
     options[longOption] = opt;
+    if (shortOption)
+    {
+        shortOptionToLongOption[shortOption] = longOption;
+    }
     // Keep --help and --version at the end of the list.
     optionList.insert(optionList.end() - std::min(optionList.size(), size_t(2)), longOption);
     return options[longOption];
@@ -312,6 +317,10 @@ std::string CommandLineParser::getUsageStr() const
         lines = ut1::splitLines(option->help, helpWrapCol);
         ret << ut1::joinStrings(lines, "\n" + std::string(helpStartCol, ' '));
         std::vector<std::string> braceItems;
+        if (option->shortOptionAlias)
+        {
+            braceItems.push_back("alias=-" + std::string(1, option->shortOptionAlias));
+        }
         if (option->isList)
         {
             braceItems.emplace_back("list");
@@ -372,13 +381,12 @@ const CommandLineParser::Option* CommandLineParser::getOption(const std::string&
 
 CommandLineParser::Option* CommandLineParser::getShortOption(char shortOption)
 {
-    auto it = std::find_if(options.begin(), options.end(), [=](const auto& elem)
-        { return elem.second.shortOption == shortOption; });
-    if (it == options.end())
+    auto it = shortOptionToLongOption.find(shortOption);
+    if (it == shortOptionToLongOption.end())
     {
         return nullptr;
     }
-    return &(it->second);
+    return getOption(it->second);
 }
 
 

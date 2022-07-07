@@ -29,12 +29,19 @@ public:
     /// Command line option.
     struct Option
     {
+        /// --- Modifiers for addOption() ---
+
         /// Make this option a list option.
         Option& listOption()
         {
             isList = true;
             return *this;
         }
+
+        /// Set short option alias.
+        Option& addAlias(char alias) { shortOptionAlias = alias; parent->shortOptionToLongOption[shortOptionAlias] = longOption; return *this; }
+
+        /// --- Get/set interface ---
 
         /// Has formal argument.
         bool hasArg() const noexcept { return !argName.empty(); }
@@ -47,6 +54,7 @@ public:
 
         /// Meta info (initialized by addOption()).
         char        shortOption{};
+        char        shortOptionAlias{};
         std::string longOption;
         std::string help;
         std::string argName;
@@ -58,7 +66,12 @@ public:
 
         /// Number of times specified on the command line.
         unsigned count{};
+
+        /// Pointer to enclosing CommandLineParser instance.
+        CommandLineParser *parent{};
     };
+
+    friend struct Option;
 
     /// Constructor.
     CommandLineParser(const std::string& programName_, const std::string& usage_, const std::string& footer_, const std::string& version_);
@@ -138,6 +151,9 @@ private:
     /// and in the order they will appear in --help.
     /// This also contains header strings for --help which start with "header:".
     std::vector<std::string> optionList;
+
+    /// Map short options to long options.
+    std::map<char,std::string> shortOptionToLongOption;
 
     /// Positional arguments.
     std::vector<std::string> args;

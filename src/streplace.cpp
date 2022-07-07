@@ -36,6 +36,7 @@ public:
 
 Error::~Error() { }
 
+
 /// Rule.
 class Rule
 {
@@ -90,13 +91,11 @@ public:
         equals     = cl.getStr("equals");
         dollar     = cl.getStr("dollar");
 
-
-        verbose               = cl.getCount("verbose");
-        dummyMode             = cl("dummy-mode");
-        dummyTrace            = cl("dummy-trace");
-        dummyLineTrace        = cl("dummy-linetrace");
-        dummyLineTraceHideSep = ut1::hasPrefix(cl.getStr("context"), "+");
-        context               = cl.getUInt("context");
+        verbose        = cl.getCount("verbose");
+        dummyMode      = cl("dummy-mode");
+        preview        = cl("preview");
+        context        = int(cl.getInt("context"));
+        previewHideSep = ut1::hasPrefix(cl.getStr("context"), "+");
 
         // Derive rename/symlink/file content mode.
         modifySymlinks = cl("modify-symlinks");
@@ -113,8 +112,7 @@ public:
 
 
         // Implicit options.
-        dummyMode |= dummyTrace || dummyLineTrace;
-        trace = dummyTrace || dummyLineTrace;
+        dummyMode |= preview;
 
         // Regex flags.
         regexFlags = std::regex::ECMAScript; // | std::regex::multiline;
@@ -289,7 +287,7 @@ private:
 
         // Apply all rules.
         size_t numMatches = 0;
-        applyAllRules(data, &numMatches);
+        data = applyAllRules(data, &numMatches);
 
         if (verbose)
         {
@@ -309,11 +307,11 @@ private:
                 ut1::writeFile(directoryEntry.path().string(), data);
             }
 
-            // Trace.
-            if (trace)
+            // Preview.
+            if (preview)
             {
                 ut1::addTrailingLfIfMissing(data);
-                printTrace(data, directoryEntry.path().string(), numMatches);
+                printPreview(data, directoryEntry.path().string(), numMatches);
             }
         }
     }
@@ -424,7 +422,7 @@ private:
 
         // Format according to rhs and return replacement string.
         std::string r = match.format(rule.rhs);
-        if (trace)
+        if (preview)
         {
             r = escapeSequences.bold + r + escapeSequences.normal;
         }
@@ -446,18 +444,19 @@ private:
         return numMatches;
     }
 
-    /// Print trace or line trace.
-    void printTrace(const std::string& s, const std::string& filename, size_t numMatches)
+    /// Print preview.
+    void printPreview(const std::string& s, const std::string& filename, size_t numMatches)
     {
-        std::cout << escapeSequences.bold << filename << escapeSequences.normal << " (" << escapeSequences.bold << numMatches << escapeSequences.normal << " matches):\n";
+        std::cout << escapeSequences.bold << filename << escapeSequences.normal << " (" << escapeSequences.bold << numMatches << escapeSequences.normal << " match" + ut1::pluralS(numMatches, "es") + "):\n";
 
-        if (dummyTrace)
+        if (context == -1)
         {
+            // Print whole file.
             std::cout << s;
         }
         else
         {
-            // Line trace.
+            // Print only changed lines plus context.
             std::vector<std::string> lines = ut1::splitLines(s);
 
             // Mark all lines which contain the escape sequences for matches including context lines.
@@ -479,7 +478,7 @@ private:
             // Print all marked lines.
             for (size_t line = 0; line < lines.size(); line++)
             {
-                if ((!dummyLineTraceHideSep) && (marked[line] && ((line == 0) || (!marked[line - 1]))))
+                if ((!previewHideSep) && (marked[line] && ((line == 0) || (!marked[line - 1]))))
                 {
                     std::cout << escapeSequences.thin << "--" << line + 1 << "--" << escapeSequences.normal << "\n";
                 }
@@ -502,11 +501,9 @@ private:
 
     unsigned verbose{};
     bool     dummyMode{};
-    bool     dummyTrace{};
-    bool     dummyLineTrace{};
-    bool     dummyLineTraceHideSep{};
-    bool     trace{};
-    size_t   context{};
+    bool     preview{};
+    bool     previewHideSep{};
+    int      context{};
 
     /// Main operations.
     bool modifyFiles{};
@@ -575,10 +572,9 @@ int main(int argc, char* argv[])
 
     cl.addHeader("\nVerbose / common options:\n");
     cl.addOption('v', "verbose", "Increase verbosity. Specify multiple times to be more verbose.");
-    cl.addOption('d', "dummy-mode", "Do not write/change anything.");
-    cl.addOption('T', "dummy-trace", "Do not write/change anything, but print matching files to stdout and highlight replacements.");
-    cl.addOption('L', "dummy-linetrace", "Do not write/change anything, but print matching lines of matching files to stdout and highlight replacements.");
-    cl.addOption(' ', "context", "set number of context lines for --dummy-linetrace to N (use +N to hide line separator) (range=[0..], default=1).", "N", "1");
+    cl.addOption('d', "dummy-mode", "Do not write/change anything.").addAlias('0');
+    cl.addOption('P', "preview", "Do not write/change anything, but print matching lines of matching files with context to stdout and highlight replacements.");
+    cl.addOption(' ', "context", "set number of context lines for --preview to N (use +N to hide line separator, use -1 to display the whole file) (range=[-1..], default=1).", "N", "1");
 
     // Parse command line options.
     cl.parse(argc, argv);
