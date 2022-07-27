@@ -110,7 +110,6 @@ public:
             throw Error("--rename cannot be combined with --rename-only");
         }
 
-
         // Implicit options.
         dummyMode |= preview;
 
@@ -157,7 +156,28 @@ public:
     /// Process directory entry (rename and modify content).
     void processDirectoryEntry(std::filesystem::directory_entry& directoryEntry)
     {
-        // Rename.
+        // Rename files and dirs.
+        if (rename)
+        {
+            std::filesystem::path oldPath = directoryEntry.path();
+            std::filesystem::path basePath = oldPath.parent_path();
+            std::string oldName = oldPath.filename().string();
+            std::string newName = applyAllRules(oldName);
+            if (oldName != newName)
+            {
+                std::filesystem::path newPath = basePath / newName;
+                if (verbose)
+                {
+                    std::cout << "Renaming dir " << oldPath.string() << " -> " << newPath.string() << ".\n"; 
+                }
+                if (!dummyMode)
+                {
+                    std::filesystem::rename(oldPath, newPath);
+                    directoryEntry.replace_filename(newName);
+                }
+                numDirsRenamed++;
+            }
+        }
 
         // Process content.
         if ((!followLinks) && directoryEntry.is_symlink())
@@ -268,11 +288,6 @@ private:
     {
         if (!modifyFiles)
         {
-            if (verbose >= 2)
-            {
-                std::cout << "Ignoring file " << directoryEntry.path().string() << ".\n";
-            }
-            numIgnored++;
             return;
         }
 
@@ -293,9 +308,15 @@ private:
         {
             if (numMatches)
             {
-                std::cout << " (" << numMatches << ")";
+                std::cout << "\rModifying " << directoryEntry.path().string() << " (" << numMatches << " matches)\n";
             }
-            std::cout << "\n";
+            else
+            {
+                if (verbose >= 2)
+                {
+                    std::cout << "\n";
+                }
+            }
         }
 
         if (numMatches)
@@ -373,10 +394,7 @@ private:
         }
         else
         {
-            if (verbose)
-            {
-                std::cout << "Ignoring dir " << directoryEntry.path().string() << ".\n";
-            }
+            std::cout << "Ignoring dir " << directoryEntry.path().string() << ".\n";
             numIgnored++;
         }
     }
