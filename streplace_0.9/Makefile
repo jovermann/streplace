@@ -5,7 +5,7 @@ TARGET = streplace
 
 CPPFLAGS ?=
 
-CXXFLAGS ?= -Wall -Wextra
+CXXFLAGS ?= -Wall -Wextra -O3
 
 CXXSTD ?= -std=c++17
 

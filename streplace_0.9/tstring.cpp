@@ -291,7 +291,7 @@ const char *tstring::pSuf(size_t max) const {
 void tstring::sprintf(const char *format, ...) {
    va_list ap;
    int ret = -1;
-#if defined(__STRICT_ANSI__)
+#if 0
    // this is the unsecure and dirty but ansi compatible version
    detachResize(256);      
    ret = vsprintf(rep->data(), format, ap); // not secure! may write out of bounds!
@@ -880,17 +880,17 @@ void tstring::expandUnprintable(char quotes) {
 	    l += 3;
 	    if(i < 32) {  // print lower control octal
 	       if(isdigit(p[1])) {
-		  q += ::sprintf(q, "%03o", i);
+		  q += ::snprintf(q, 4, "%03o", i);
 	       } else {
-		  q += ::sprintf(q, "%o", i);
+		  q += ::snprintf(q, 4, "%o", i);
 		  if(i>=8) --l;
 		  else l-=2;
 	       }
 	    } else {    // print octal or hex
 	       if(isxdigit(p[1])) {
-		  q += ::sprintf(q, "%03o", i);
+		  q += ::snprintf(q, 4, "%03o", i);
 	       } else {
-		  q += ::sprintf(q, "x%02x", i);
+		  q += ::snprintf(q, 4, "x%02x", i);
 	       }
 	    }
 	 }
@@ -1275,13 +1275,13 @@ const char *progressBar(const char *message, unsigned int n, unsigned int max, i
    if(width >= size) width = size - 1;
    if(message == 0) {
       // clear line
-      sprintf(buf, "%*s", width, "");
+      snprintf(buf, size, "%*s", width, "");
       return buf;
    }
    if(max == 0) {
       // open end progress
       if(phasechar[phase] == 0) phase = 0;
-      sprintf(buf, "%.*s %11d %c", width - (11 - 3), message, n, phasechar[phase++]);
+      snprintf(buf, size, "%.*s %11d %c", width - (11 - 3), message, n, phasechar[phase++]);
       return buf;
    }
    
@@ -1291,7 +1291,7 @@ const char *progressBar(const char *message, unsigned int n, unsigned int max, i
    int nlen = 0, i;
    for(i = max; i; i /= 10, nlen++) /* empty body */;
    
-   int l = sprintf(buf, "%.*s %*d/%*d (%5.1f%%) ", width - (12 + 2 * nlen), message, nlen, n, nlen, max, double(n)/double(max)*100.0);
+   int l = snprintf(buf, size, "%.*s %*d/%*d (%5.1f%%) ", width - (12 + 2 * nlen), message, nlen, n, nlen, max, double(n)/double(max)*100.0);
    int rest = width - l;
    if(rest <= 0) return buf;
    int done = int(double(n)/double(max)*double(rest));

@@ -149,7 +149,7 @@ const char *options[] = {
 // ???          get default/ranges
 // 1998
 // 17:00 Jan 10 improved rc file parsing (string scan tools)
-// 18:47 Aug 04 fixed %s bug (printf->puts) 
+// 18:47 Aug 04 fixed %s bug (printf->puts)
 // 22:48 Aug 05 added %e for authors email
 // 21:00 Oct 01 documentation (1595)
 // 21:29 Nov 12 allow %n in help (application name) (1607)
@@ -939,7 +939,7 @@ void TAppConfigItem::printHelp(int max_optlen, bool globalonlycl) const {
    if(!headline.empty()) {
       printf("\n%s\n", headline.c_str());
    }
-   sprintf(buf, "%c%c --%s%s%s%s", (!char_name.empty())?'-':' ', (!char_name.empty())?char_name[0]:' ', 
+   snprintf(buf, sizeof(buf), "%c%c --%s%s%s%s", (!char_name.empty())?'-':' ', (!char_name.empty())?char_name[0]:' ',
 	   name.c_str(), optional_param?"[":"", type==SWITCH?"":("=" + getParamStr()).c_str(), optional_param?"]":"");
    tstring h(help);
    h += " " + getFlagsStr("--", globalonlycl);
