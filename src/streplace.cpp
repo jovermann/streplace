@@ -31,7 +31,7 @@ public:
     {
     }
 
-    virtual ~Error();
+    virtual ~Error() override;
 };
 
 Error::~Error() { }
@@ -168,7 +168,7 @@ public:
                 std::filesystem::path newPath = basePath / newName;
                 if (verbose)
                 {
-                    std::cout << "Renaming dir " << oldPath.string() << " -> " << newPath.string() << ".\n"; 
+                    std::cout << "Renaming " << oldPath.string() << " -> " << newPath.string() << ".\n";
                 }
                 if (!dummyMode)
                 {
