@@ -89,9 +89,11 @@
 // 2013:  3 Feb v0.9.37: fixed '""""="""' bug (was treated like '""""=""""'), fixed '"""=aaa' bug (was not recognized as a rule at all)
 // 2022: 19 Feb v0.9.38: Re-released under MTI license. Renamed *.cc files to *.cpp (using streplace -xN .cc=.cpp *.cc). Compiles without warnings (under -Wall -Wextra) on clang 13.
 // 2023: 16 Sep v0.9.39: Fixed compilation under clang 14.0.3 on MacOS 13.5.2.
+// 2024: 07 Feb v0.9.40: Fix compilation on gcc-13 on MacOS 14.3 (placement new/delete error)
+
 
 // please update VERSION
-#define VERSION "0.9.39"
+#define VERSION "0.9.40"
 
 
 

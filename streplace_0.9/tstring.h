@@ -58,7 +58,8 @@ class tstring {
       // operator new for this class
       static void * operator new (size_t size, size_t tmem) {
 	 return ::operator new (size + tmem + 1);}
-      
+      static void operator delete(void *ptr) { ::operator delete(ptr); }
+
       // create a new representation
       static Rep *create(size_t tmem);
             
