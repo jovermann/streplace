@@ -1,8 +1,9 @@
 // Command line parser.
 //
-// Copyright (c) 2021-2022 Johannes Overmann
+// Copyright (c) 2021-2024 Johannes Overmann
 //
-// This file is released under the MIT license. See LICENSE for license.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE or copy at https://www.boost.org/LICENSE_1_0.txt)
 
 #include <string>
 #include <vector>
@@ -18,6 +19,8 @@ namespace ut1
 {
 
 #define HEADER_PREFIX "header:"
+
+CommandLineParser *CommandLineParser::instance{};
 
 void CommandLineParser::Option::setValue(const std::string& v, char listSepChar_)
 {
@@ -50,6 +53,8 @@ CommandLineParser::CommandLineParser(const std::string& programName_, const std:
 , footer(footer_)
 , version(version_)
 {
+    instance = this;
+
     // Appear in --help in reverse order:
     addOption(' ', "version", "Print version and exit.");
     addOption('h', "help", "Print this help message and exit.");
@@ -73,14 +78,16 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
 
     // Check for duplicate long option.
     if (options.count(longOption))
-        throw std::runtime_error("addOption(longOption=" + longOption + "): option already exists\n");
+    {
+        throw std::runtime_error("CommandLineParser::addOption(longOption=" + longOption + "): Option already exists!\n");
+    }
 
     // Check for duplicate short option.
     if (shortOption)
     {
         Option* existingOption = getShortOption(shortOption);
         if (existingOption)
-            throw std::runtime_error("addOption(shortOption=" + std::string(1, shortOption) + "): option already exists\n");
+            throw std::runtime_error("CommandLineParser::addOption(shortOption=" + std::string(1, shortOption) + "): Option already exists!\n");
     }
 
     Option opt;
@@ -103,7 +110,7 @@ CommandLineParser::Option& CommandLineParser::addOption(char shortOption, const 
 }
 
 
-void CommandLineParser::parse(int argc, char* argv[])
+void CommandLineParser::parse(int argc, const char* argv[])
 {
     // Parse arguments.
     for (int i = 1; i < argc; i++)
@@ -168,7 +175,7 @@ unsigned CommandLineParser::getCount(const std::string& longOption) const
     }
     else
     {
-        throw std::runtime_error("Unknown option '" + longOption + "'!");
+        throw std::runtime_error("CommandLineParser::getCount(): Unknown option '" + longOption + "'!");
     }
 }
 
@@ -182,7 +189,7 @@ const std::string& CommandLineParser::getStr(const std::string& longOption) cons
     }
     else
     {
-        throw std::runtime_error("Unknown option '" + longOption + "'!");
+        throw std::runtime_error("CommandLineParser::getStr(): Unknown option '" + longOption + "'!");
     }
 }
 
@@ -248,7 +255,7 @@ void CommandLineParser::setValue(const std::string& longOption, const std::strin
     }
     else
     {
-        throw std::runtime_error("Unknown option '" + longOption + "'!");
+        throw std::runtime_error("CommandLineParser::setValue(): Unknown option '" + longOption + "'!");
     }
 }
 
@@ -257,6 +264,23 @@ void CommandLineParser::error(const std::string& message, int exitStatus) const
 {
     printMessage("Error: " + message);
     std::exit(exitStatus);
+}
+
+
+void CommandLineParser::reportErrorAndExit(const std::string& message, int exitStatus)
+{
+    if (instance)
+    {
+        // This is the 99.999% case.
+        instance->error(message, exitStatus);
+    }
+    else
+    {
+        // We will virtually never end up in this case since an instance of CommandLineOptions should be
+        // created as the first thing.
+        std::cout << message << "\n";
+        std::exit(exitStatus);
+    }
 }
 
 
@@ -390,7 +414,7 @@ CommandLineParser::Option* CommandLineParser::getShortOption(char shortOption)
 }
 
 
-void CommandLineParser::parseLongOption(int argc, char* argv[], int& i)
+void CommandLineParser::parseLongOption(int argc, const char* argv[], int& i)
 {
     std::vector<std::string> fields     = ut1::splitString(argv[i] + 2, '=', 1);
     std::string              longOption = fields[0];
@@ -458,7 +482,7 @@ void CommandLineParser::parseLongOption(int argc, char* argv[], int& i)
 }
 
 
-void CommandLineParser::parseShortOptions(int argc, char* argv[], int& i)
+void CommandLineParser::parseShortOptions(int argc, const char* argv[], int& i)
 {
     for (int j = 1; argv[i][j]; j++)
     {

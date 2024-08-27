@@ -1,14 +1,24 @@
 // Misc utility functions.
 //
-// Copyright (c) 2021-2022 Johannes Overmann
+// Copyright (c) 2021-2024 Johannes Overmann
 //
-// This file is released under the MIT license. See LICENSE for license.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE or copy at https://www.boost.org/LICENSE_1_0.txt)
 
 #ifndef _WIN32
 #include <unistd.h>
+#include <fcntl.h>
 #endif
 #include "MiscUtils.hpp"
+#ifdef ENABLE_UNIT_TEST
 #include "UnitTest.hpp"
+#else
+# define UNIT_TEST(name) class UnitTest_##name { void run(); }; inline void UnitTest_##name::run()
+# define ASSERT_EQ(a, b)
+#endif
+#include <iostream>
+#include <chrono>
+
 
 namespace ut1
 {
@@ -704,6 +714,39 @@ UNIT_TEST(quouteRegexChars)
 }
 
 
+std::string toNfd(const std::string& s)
+{
+    // This only works for german umlauts so far.
+    std::string r;
+    for (size_t i = 0; i < s.length(); i++)
+    {
+        if ((s[i] == '\xc3') && (i < s.length() - 1))
+        {
+            switch (s[i + 1])
+            {
+            case '\x84': r += "A\xcc\x88"; i++; continue;
+            case '\x96': r += "O\xcc\x88"; i++; continue;
+            case '\x9c': r += "U\xcc\x88"; i++; continue;
+            case '\xa4': r += "a\xcc\x88"; i++; continue;
+            case '\xb6': r += "o\xcc\x88"; i++; continue;
+            case '\xbc': r += "u\xcc\x88"; i++; continue;
+            }
+        }
+        r += s[i];
+    }
+    return r;
+}
+
+
+UNIT_TEST(toNfd)
+{
+    ASSERT_EQ(ut1::toNfd(""), "");
+    ASSERT_EQ(ut1::toNfd("\xcc\x88"), "\xcc\x88");
+    ASSERT_EQ(ut1::toNfd("A\xcc\x88"), "A\xcc\x88");
+    ASSERT_EQ(ut1::toNfd("\xc3\x84"), "A\xcc\x88");
+}
+
+
 std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v)
 {
     s << "{";
@@ -781,6 +824,180 @@ UNIT_TEST(readFile_writeFile)
     writeFile(filename, "abc");
     std::string s = readFile(filename);
     ASSERT_EQ(s, "abc");
+}
+
+FileType getFileType(const std::filesystem::directory_entry& entry, bool followSymlinks)
+{
+    // First check for symlink.
+    // is_symlink() never follows symlinks, while all other is_*() functions follow symlinks.
+    if (entry.is_symlink())
+    {
+        // Report broken symlinks as symlink, even  when when following symlinks.
+        if ((!followSymlinks) || (!entry.exists()))
+        {
+            return FT_SYMLINK;
+        }
+    }
+    if (entry.is_regular_file())
+    {
+        return FT_REGULAR;
+    }
+    else if (entry.is_directory())
+    {
+        return FT_DIR;
+    }
+    else if (entry.is_fifo())
+    {
+        return FT_FIFO;
+    }
+    else if (entry.is_block_file())
+    {
+        return FT_BLOCK;
+    }
+    else if (entry.is_character_file())
+    {
+        return FT_CHAR;
+    }
+    else if (entry.is_socket())
+    {
+        return FT_SOCKET;
+    }
+    else
+    {
+        return FT_NON_EXISTING;
+    }
+}
+
+FileType getFileType(const std::filesystem::path& entry, bool followSymlinks)
+{
+    // First check for symlink.
+    // is_symlink() never follows symlinks, while all other is_*() functions follow symlinks.
+    if (std::filesystem::is_symlink(entry))
+    {
+        // Report broken symlinks as symlink, even when following symlinks.
+        if ((!followSymlinks) || (!std::filesystem::exists(entry)))
+        {
+            return FT_SYMLINK;
+        }
+    }
+    if (std::filesystem::is_regular_file(entry))
+    {
+        return FT_REGULAR;
+    }
+    else if (std::filesystem::is_directory(entry))
+    {
+        return FT_DIR;
+    }
+    else if (std::filesystem::is_fifo(entry))
+    {
+        return FT_FIFO;
+    }
+    else if (std::filesystem::is_block_file(entry))
+    {
+        return FT_BLOCK;
+    }
+    else if (std::filesystem::is_character_file(entry))
+    {
+        return FT_CHAR;
+    }
+    else if (std::filesystem::is_socket(entry))
+    {
+        return FT_SOCKET;
+    }
+    else
+    {
+        return FT_NON_EXISTING;
+    }
+}
+
+std::string getFileTypeStr(const std::filesystem::directory_entry& entry, bool followSymlinks)
+{
+    return getFileTypeStr(getFileType(entry, followSymlinks));
+}
+
+std::string getFileTypeStr(const std::filesystem::path& entry, bool followSymlinks)
+{
+    return getFileTypeStr(getFileType(entry, followSymlinks));
+}
+
+std::string getFileTypeStr(FileType fileType)
+{
+    switch (fileType)
+    {
+    case FT_REGULAR: return "file";
+    case FT_DIR: return "dir";
+    case FT_SYMLINK: return "symlink";
+    case FT_FIFO: return "fifo";
+    case FT_BLOCK: return "block-device";
+    case FT_CHAR: return "char-device";
+    case FT_SOCKET: return "socket";
+    case FT_NON_EXISTING: return "non-existing";
+    }
+    return "unknown-file-type";
+}
+
+bool fsExists(const std::filesystem::path& entry)
+{
+    return std::filesystem::exists(entry) || std::filesystem::is_symlink(entry);
+}
+
+bool fsIsDirectory(const std::filesystem::path& entry, bool followSymlinks)
+{
+    return getFileType(entry, followSymlinks) == FT_DIR;
+}
+
+bool fsIsRegular(const std::filesystem::path& entry, bool followSymlinks)
+{
+    return getFileType(entry, followSymlinks) == FT_REGULAR;
+}
+
+StatInfo::StatInfo()
+{
+    statData = {};
+}
+
+StatInfo::StatInfo(const std::filesystem::directory_entry& entry, bool followSymlinks)
+{
+    if (followSymlinks)
+    {
+        stat(entry.path().c_str(), &statData);
+    }
+    else
+    {
+        lstat(entry.path().c_str(), &statData);
+    }
+}
+
+std::filesystem::file_time_type StatInfo::getMTime() const
+{
+    using fs_seconds = std::chrono::duration<std::filesystem::file_time_type::rep>;
+    using fs_nanoseconds = std::chrono::duration<std::filesystem::file_time_type::rep, std::nano>;
+    auto dur = fs_seconds(getMTimeSpec().tv_sec) + fs_nanoseconds(getMTimeSpec().tv_nsec);
+    return std::filesystem::file_time_type(dur);
+}
+
+StatInfo getStat(const std::filesystem::directory_entry& entry, bool followSymlinks)
+{
+    return StatInfo(entry, followSymlinks);
+}
+
+std::filesystem::file_time_type getLastWriteTime(const std::filesystem::directory_entry& entry, bool followSymlinks)
+{
+    return getStat(entry, followSymlinks).getMTime();
+}
+
+void setLastWriteTime(const std::filesystem::directory_entry& entry, std::filesystem::file_time_type newTime, bool followSymlinks)
+{
+    auto sec = std::chrono::time_point_cast<std::chrono::seconds>(newTime);
+    auto nsec = std::chrono::time_point_cast<std::chrono::nanoseconds>(newTime) - std::chrono::time_point_cast<std::chrono::nanoseconds>(sec);
+
+    struct timespec t[2];
+    t[0].tv_sec = 0;
+    t[0].tv_nsec = UTIME_OMIT;
+    t[1].tv_sec = sec.time_since_epoch().count();
+    t[1].tv_nsec = nsec.count();
+
+    utimensat(AT_FDCWD, entry.path().c_str(), t, followSymlinks ? 0 : AT_SYMLINK_NOFOLLOW);
 }
 
 

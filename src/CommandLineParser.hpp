@@ -1,11 +1,11 @@
 // Command line parser.
 //
-// Copyright (c) 2021-2022 Johannes Overmann
+// Copyright (c) 2021-2024 Johannes Overmann
 //
-// This file is released under the MIT license. See LICENSE for license.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE or copy at https://www.boost.org/LICENSE_1_0.txt)
 
-#ifndef include_CommandLineParser_hpp
-#define include_CommandLineParser_hpp
+#pragma once
 
 #include <string>
 #include <vector>
@@ -86,10 +86,14 @@ public:
     /// Parse command line.
     /// By default parse() does not return for --help/--version or on errors.
     /// Return 0 on success.
-    void parse(int argc, char* argv[]);
+    void parse(int argc, const char* argv[]);
+    void parse(int argc, char* argv[]) { parse(argc, const_cast<const char **>(argv)); }
 
     /// Get switch value.
     bool operator()(const std::string& longOption) const { return isSet(longOption); }
+
+    /// Get switch value.
+    bool getBool(const std::string& longOption) const { return isSet(longOption); }
 
     /// Get switch value.
     bool isSet(const std::string& longOption) const { return getCount(longOption) > 0; }
@@ -119,8 +123,14 @@ public:
     /// This is useful to set logical non-static default values.
     void setValue(const std::string& longOption, const std::string& value, bool clearList = true);
 
+    /// Set bool option (to true by default).
+    void setOption(const std::string& longOption, bool value = true) { setValue(longOption, value ? "1" : "0"); }
+
     /// Print error and exit.
     [[noreturn]] void error(const std::string& message, int exitStatus = 1) const;
+
+    /// Print error and exit.
+    [[noreturn]] static void reportErrorAndExit(const std::string& message, int exitStatus = 1);
 
     /// Print message and potentially exit.
     void printMessage(const std::string& message) const;
@@ -139,10 +149,10 @@ private:
     Option* getShortOption(char shortOption);
 
     /// Parse long option in argv[i], potentially consuming an argument in argv[++i].
-    void parseLongOption(int argc, char* argv[], int& i);
+    void parseLongOption(int argc, const char* argv[], int& i);
 
     /// Parse short options in argv[i], potentially consuming an argument in argv[++i].
-    void parseShortOptions(int argc, char* argv[], int& i);
+    void parseShortOptions(int argc, const char* argv[], int& i);
 
     /// Options.
     std::map<std::string, Option> options;
@@ -172,10 +182,10 @@ private:
 
     /// Version text.
     std::string version;
+
+    /// Global instance pointer for reportErrorAndExit().
+    static CommandLineParser *instance;
 };
 
 
 } // namespace ut1
-
-
-#endif /* include_CommandLineParser_hpp */
