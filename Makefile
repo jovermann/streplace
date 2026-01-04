@@ -6,9 +6,9 @@ TARGET = streplace
 CPPFLAGS ?= -pedantic
 
 #CXXFLAGS ?= -Wall -Wextra
-CXXFLAGS ?= -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-shorten-64-to-32 -Wno-missing-prototypes -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-poison-system-directories -fcomment-block-commands=n -Wno-string-conversion
+CXXFLAGS ?= -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-shorten-64-to-32 -Wno-missing-prototypes -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-poison-system-directories -fcomment-block-commands=n -Wno-string-conversion -Wno-covered-switch-default
 
-CXXSTD ?= -std=c++17
+CXXSTD ?= -std=c++23
 
 BUILDDIR=build
 SOURCES = $(wildcard src/*.cpp)
@@ -55,4 +55,3 @@ tidy: $(TARGET)
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(DEPENDS)
 endif
-

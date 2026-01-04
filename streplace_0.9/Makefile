@@ -7,7 +7,7 @@ CPPFLAGS ?=
 
 CXXFLAGS ?= -Wall -Wextra -O3
 
-CXXSTD ?= -std=c++17
+CXXSTD ?= -std=c++23
 
 SOURCES = $(wildcard *.cpp)
 OBJECTS = $(SOURCES:%.cpp=build/%.o)
@@ -34,4 +34,3 @@ clean:
 ifeq ($(findstring $(MAKECMDGOALS),clean),)
 -include $(DEPENDS)
 endif
-

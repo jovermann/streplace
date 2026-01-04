@@ -16,6 +16,7 @@
 #include <filesystem>
 #include <sys/stat.h>
 #include <string_view>
+#include <ranges>
 
 // --- Windows support ---
 #ifdef _WIN32
