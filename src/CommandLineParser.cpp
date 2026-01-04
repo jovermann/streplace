@@ -1,6 +1,6 @@
 // Command line parser.
 //
-// Copyright (c) 2021-2024 Johannes Overmann
+// Copyright (c) 2021-2025 Johannes Overmann
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE or copy at https://www.boost.org/LICENSE_1_0.txt)
@@ -504,6 +504,7 @@ void CommandLineParser::parseShortOptions(int argc, const char* argv[], int& i)
                     if (++i < argc)
                     {
                         option->setValue(argv[i], listSepChar);
+                        break;
                     }
                     else
                     {
@@ -519,7 +520,7 @@ void CommandLineParser::parseShortOptions(int argc, const char* argv[], int& i)
         }
         else
         {
-            error("Unknown option -" + std::string(1, opt) + "!");
+            error("Unknown short option -" + std::string(1, opt) + "!");
         }
     }
 }

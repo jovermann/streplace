@@ -1,6 +1,6 @@
 // Misc utility functions.
 //
-// Copyright (c) 2021-2024 Johannes Overmann
+// Copyright (c) 2021-2025 Johannes Overmann
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE or copy at https://www.boost.org/LICENSE_1_0.txt)
@@ -8,6 +8,9 @@
 #ifndef _WIN32
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+#include <sys/disk.h>
 #endif
 #include "MiscUtils.hpp"
 #ifdef ENABLE_UNIT_TEST
@@ -18,6 +21,7 @@
 #endif
 #include <iostream>
 #include <chrono>
+#include <format>
 
 
 namespace ut1
@@ -705,7 +709,7 @@ std::string quoteRegexChars(const std::string& s)
 }
 
 
-UNIT_TEST(quouteRegexChars)
+UNIT_TEST(quoteRegexChars)
 {
     std::string r = "^[F][O][O]a.a*a+a|a?a{}a()a?\\$";
     ASSERT_EQ(ut1::regex_replace("A" + r + "B", std::regex(quoteRegexChars(r)), [&](const std::smatch&)
@@ -730,6 +734,7 @@ std::string toNfd(const std::string& s)
             case '\xa4': r += "a\xcc\x88"; i++; continue;
             case '\xb6': r += "o\xcc\x88"; i++; continue;
             case '\xbc': r += "u\xcc\x88"; i++; continue;
+            default: break;
             }
         }
         r += s[i];
@@ -746,6 +751,48 @@ UNIT_TEST(toNfd)
     ASSERT_EQ(ut1::toNfd("\xc3\x84"), "A\xcc\x88");
 }
 
+uint64_t strToU64(const std::string& s)
+{
+    size_t pos = 0;
+    uint64_t r = std::stoull(s, &pos, 0);
+    if (pos < s.length())
+    {
+        if (pos != s.length() - 1)
+        {
+            throw std::runtime_error("Syntax error in integer (suffix too long)!");
+        }
+        switch (s[pos])
+        {
+            case 'k': r <<= 10; break;
+            case 'M': r <<= 20; break;
+            case 'G': r <<= 30; break;
+            case 'T': r <<= 40; break;
+            case 'P': r <<= 50; break;
+            case 'E': r <<= 60; break;
+            default:
+                throw std::runtime_error("Syntax error in integer (unknown unit)!");
+        }
+    }
+    return r;
+}
+
+UNIT_TEST(strToU64)
+{
+    ASSERT_EQ(ut1::strToU64("0"), 0ull);
+    ASSERT_EQ(ut1::strToU64("42"), 42ull);
+    ASSERT_EQ(ut1::strToU64("4k"), 4096ull);
+    ASSERT_EQ(ut1::strToU64("2M"), 2*1024*1024ull);
+}
+
+UNIT_TEST(csvIntegersToVector)
+{
+    ASSERT_EQ(ut1::csvIntegersToVector<uint8_t>(""), std::vector<uint8_t>({}));
+    ASSERT_EQ(ut1::csvIntegersToVector<uint8_t>("  42  "), std::vector<uint8_t>({42}));
+    ASSERT_EQ(ut1::csvIntegersToVector<uint8_t>("0,1,2,3"), std::vector<uint8_t>({0, 1, 2, 3}));
+    ASSERT_EQ(ut1::csvIntegersToVector<uint16_t>("0,1,2,0x10"), std::vector<uint16_t>({0, 1, 2, 16}));
+    ASSERT_EQ(ut1::csvIntegersToVector<uint16_t>("0,1, 2 ,0x10"), std::vector<uint16_t>({0, 1, 2, 16}));
+    ASSERT_EQ(ut1::csvIntegersToVector<uint16_t>("00,ff,aa,55", 16), std::vector<uint16_t>({0, 0xff, 0xaa, 0x55}));
+}
 
 std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v)
 {
@@ -792,12 +839,101 @@ std::ostream& flushTty(std::ostream& os)
 }
 
 
+std::string secondsToString(double seconds)
+{
+    std::string r;
+    if (seconds < 0.0)
+    {
+        r = "-";
+        seconds = -seconds;
+    }
+    if (seconds < 99.5)
+    {
+        return std::format("{:.1f}s", seconds);
+    }
+    else if (seconds < 99.5 * 60.0)
+    {
+        return std::format("{:.1f}m", seconds / 60.0);
+    }
+    else if (seconds < 99.5 * 60.0 * 60.0)
+    {
+        return std::format("{:.1f}h", seconds / 60.0 / 60.0);
+    }
+    else
+    {
+        return std::format("{:.1f}d", seconds / 60.0 / 60.0 / 24.0);
+    }
+}
+
+
+std::string getPreciseSizeStr(size_t size)
+{
+    static const char *sizeStr[] = {"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
+    size_t sizeStrIndex = 0;
+    if (size == 1)
+    {
+        return "1 byte";
+    }
+    while (size >= 1024)
+    {
+        size >>= 10;
+        sizeStrIndex++;
+    }
+    return std::format("{} {}", size, sizeStr[sizeStrIndex]);
+}
+
+
+UNIT_TEST(getPreciseSizeStr)
+{
+    ASSERT_EQ(getPreciseSizeStr(0), "0 bytes");
+    ASSERT_EQ(getPreciseSizeStr(1), "1 byte");
+    ASSERT_EQ(getPreciseSizeStr(2), "2 bytes");
+    ASSERT_EQ(getPreciseSizeStr(7*1024), "7 kB");
+    ASSERT_EQ(getPreciseSizeStr(7*1024*1024), "7 MB");
+    ASSERT_EQ(getPreciseSizeStr(7ull*1024*1024*1024), "7 GB");
+    ASSERT_EQ(getPreciseSizeStr(7ull*1024*1024*1024*1024), "7 TB");
+}
+
+
+size_t getLargestPowerOfTwoFactor(size_t size)
+{
+    if (size == 0)
+    {
+        return 0;
+    }
+    size_t bSize = 1;
+    while ((size & 1) == 0)
+    {
+        size >>= 1;
+        bSize <<= 1;
+    }
+    return bSize;
+}
+
+
+UNIT_TEST(getLargestPowerOfTwoFactor)
+{
+    ASSERT_EQ(getLargestPowerOfTwoFactor(0), 0);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(1), 1);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(2), 2);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(3), 1);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(4), 4);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(5), 1);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(6), 2);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(7), 1);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(8), 8);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(9), 1);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(7*1024), 1024);
+    ASSERT_EQ(getLargestPowerOfTwoFactor(7*1024*1024), 1024*1024);
+}
+
+
 std::string readFile(const std::string& filename)
 {
     std::ifstream is(filename, std::ios::in | std::ios::binary | std::ios::ate);
     if (!is)
     {
-        throw std::runtime_error("readFile(" + filename + "): Error while opening file for reading.");
+        throw std::runtime_error(std::format("readFile({}): Error while opening file for reading.", filename));
     }
     size_t size = is.tellg();
     is.seekg(0, is.beg);
@@ -812,11 +948,10 @@ void writeFile(const std::string& filename, const std::string& data)
     std::ofstream os(filename, std::ios::out | std::ios::binary | std::ios::trunc);
     if (!os)
     {
-        throw std::runtime_error("writeFile(" + filename + "): Error while opneing file for writing.");
+        throw std::runtime_error(std::format("writeFile({}): Error while opening file for writing.", filename));
     }
     os.write(data.data(), data.size());
 }
-
 
 UNIT_TEST(readFile_writeFile)
 {
@@ -824,6 +959,56 @@ UNIT_TEST(readFile_writeFile)
     writeFile(filename, "abc");
     std::string s = readFile(filename);
     ASSERT_EQ(s, "abc");
+    std::filesystem::remove(filename);
+}
+
+size_t getFileSize(const std::string& filename)
+{
+    int fd = ::open(filename.c_str(), O_RDONLY);
+    if (fd == -1)
+    {
+        throw std::runtime_error(std::format("getFileSize({}): Error while opening file for reading.", filename));
+    }
+
+    struct stat st;
+    if (fstat(fd, &st) == -1)
+    {
+        ::close(fd);
+        throw std::runtime_error(std::format("getFileSize({}): Error while fstat()ing file.", filename));
+    }
+
+    size_t size = 0;
+
+    if (S_ISREG(st.st_mode)) // Regular file.
+    {
+        size = size_t(st.st_size);
+    }
+    else if (S_ISBLK(st.st_mode) || S_ISCHR(st.st_mode)) // Block or character device (e.g., /dev/disk16).
+    {
+        uint64_t blockCount = 0;
+        uint32_t blockSize = 0;
+
+        if (::ioctl(fd, DKIOCGETBLOCKCOUNT, &blockCount) == -1)
+        {
+            ::close(fd);
+            throw std::runtime_error(std::format("getFileSize({}): ioctl DKIOCGETBLOCKCOUNT failed.", filename));
+        }
+
+        if (ioctl(fd, DKIOCGETBLOCKSIZE, &blockSize) == -1) {
+            ::close(fd);
+            throw std::runtime_error(std::format("getFileSize({}): ioctl DKIOCGETBLOCKSIZE failed.", filename));
+        }
+
+        size = size_t(blockCount * blockSize);
+    }
+    else
+    {
+        ::close(fd);
+        throw std::runtime_error(std::format("getFileSize({}): Unknown file type.", filename));
+    }
+
+    ::close(fd);
+    return size;
 }
 
 FileType getFileType(const std::filesystem::directory_entry& entry, bool followSymlinks)
@@ -932,8 +1117,8 @@ std::string getFileTypeStr(FileType fileType)
     case FT_CHAR: return "char-device";
     case FT_SOCKET: return "socket";
     case FT_NON_EXISTING: return "non-existing";
+    default: return "unknown-file-type";
     }
-    return "unknown-file-type";
 }
 
 bool fsExists(const std::filesystem::path& entry)

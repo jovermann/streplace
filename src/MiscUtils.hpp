@@ -1,6 +1,6 @@
 // Misc utility functions.
 //
-// Copyright (c) 2021-2024 Johannes Overmann
+// Copyright (c) 2021-2025 Johannes Overmann
 //
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE or copy at https://www.boost.org/LICENSE_1_0.txt)
@@ -76,7 +76,7 @@ std::string capitalize(std::string s);
 inline bool isalnum(char c) noexcept { return std::isalnum(static_cast<unsigned char>(c)); }
 
 /// Sane isalnum() with _.
-inline bool isalnum_(char c) noexcept { return isalnum(c) || (c == '_'); }
+inline bool isalnum_(char c) noexcept { return ::isalnum(unsigned(c)) || (c == '_'); }
 
 /// Sane isprint().
 inline bool isprint(char c) noexcept { return std::isprint(static_cast<unsigned char>(c)); }
@@ -90,6 +90,28 @@ std::string quoteRegexChars(const std::string& s);
 
 /// Convert UTF-8 to NFD (canonical decomposed form).
 std::string toNfd(const std::string& s);
+
+/// Convert string to uint64_t.
+/// The prefix 0x indicates hex, else dec.
+/// The suffixes k, M, G, T, P, E are supported for powers of 1024.
+uint64_t strToU64(const std::string& s);
+
+/// Convert comma separated list of integers to vector.
+/// T may be uint8_t to uint64_t.
+template<typename T> std::vector<T> csvIntegersToVector(std::string_view s, int base = 0)
+{
+    std::vector<T> r;
+    for (auto element : std::views::split(s, ','))
+    {
+        uint64_t value = std::stoull(std::string(element.begin(), element.end()), nullptr, base);
+        if (value > static_cast<uint64_t>(std::numeric_limits<T>::max()))
+        {
+            throw std::out_of_range("Value out of range in csvIntegersToVector()");
+        }
+        r.push_back(static_cast<T>(value));
+    }
+    return r;
+}
 
 // --- String utilities: Misc. ---
 
@@ -193,8 +215,8 @@ inline std::string hexlify(const std::vector<uint8_t> &bytes)
 /// Flush output stream, but only if:
 /// 1. it is std::cout.
 /// 2. it is connected to a TTY.
-/// (Flushing stdout which is redirected to a file has a disasterous
-/// performance impact. Use this to suppress flushes whiuch are just
+/// (Flushing stdout which is redirected to a file has a disastrous
+/// performance impact. Use this to suppress flushes which are just
 /// inserted to progress output to the same line.)
 std::ostream& flushTty(std::ostream& os);
 
@@ -214,6 +236,16 @@ constexpr std::string_view typeName()
     return name.substr(typeNameHelper<void>().find("void"), name.length() - typeNameHelper<void>().length() + 4);
 }
 
+/// Time in seconds to string (single value s/m/h/s).
+std::string secondsToString(double seconds);
+
+/// Format size into string with bytes, kB, MB, GB ... suffix.
+std::string getPreciseSizeStr(size_t size);
+
+/// Get largest power of two multiple of size.
+size_t getLargestPowerOfTwoFactor(size_t size);
+
+
 // --- File utilities. ---
 
 /// Read string from file.
@@ -221,6 +253,9 @@ std::string readFile(const std::string& filename);
 
 /// Write string to file.
 void writeFile(const std::string& filename, const std::string& data);
+
+/// Get file size.
+size_t getFileSize(const std::string& filename);
 
 /// File type.
 enum FileType { FT_REGULAR, FT_DIR, FT_SYMLINK, FT_FIFO, FT_BLOCK, FT_CHAR, FT_SOCKET, FT_NON_EXISTING };
