@@ -10,18 +10,16 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
-#include <sys/disk.h>
+#endif
+#ifdef __APPLE__
+#include <sys/disk.h> // for DKIOCGETBLOCKCOUNT and DKIOCGETBLOCKSIZE
 #endif
 #include "MiscUtils.hpp"
-#ifdef ENABLE_UNIT_TEST
 #include "UnitTest.hpp"
-#else
-# define UNIT_TEST(name) class UnitTest_##name { void run(); }; inline void UnitTest_##name::run()
-# define ASSERT_EQ(a, b)
-#endif
 #include <iostream>
 #include <chrono>
 #include <format>
+#include <iomanip>
 
 
 namespace ut1
@@ -866,20 +864,69 @@ std::string secondsToString(double seconds)
 }
 
 
-std::string getPreciseSizeStr(size_t size)
+std::string getPreciseSizeStr(size_t size, uint64_t* factor)
 {
     static const char *sizeStr[] = {"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
     size_t sizeStrIndex = 0;
+    uint64_t unitFactor = 1;
     if (size == 1)
     {
+        if (factor != nullptr)
+        {
+            *factor = 1;
+        }
         return "1 byte";
     }
     while (size >= 1024)
     {
         size >>= 10;
+        unitFactor <<= 10;
         sizeStrIndex++;
     }
+    if (factor != nullptr)
+    {
+        *factor = unitFactor;
+    }
     return std::format("{} {}", size, sizeStr[sizeStrIndex]);
+}
+
+std::string getApproxSizeStr(double bytes, unsigned precision, bool space, bool bytesWithPrecision)
+{
+    static const char *sizeStr[] = {"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
+    if (bytes <= 0.0)
+    {
+        return "0";
+    }
+    double value = bytes;
+    size_t sizeStrIndex = 0;
+    uint64_t whole = static_cast<uint64_t>(bytes);
+    while (whole >= 1024 && sizeStrIndex + 1 < std::size(sizeStr))
+    {
+        whole >>= 10;
+        value /= 1024.0;
+        sizeStrIndex++;
+    }
+
+    std::ostringstream os;
+    if (sizeStrIndex == 0 && !bytesWithPrecision)
+    {
+        os << static_cast<uint64_t>(bytes);
+    }
+    else
+    {
+        os << std::fixed << std::setprecision(precision) << value;
+    }
+    if (space)
+    {
+        os << " ";
+    }
+    os << sizeStr[sizeStrIndex];
+    return os.str();
+}
+
+std::string getApproxSizeStr(uint64_t bytes, unsigned precision, bool space, bool bytesWithPrecision)
+{
+    return getApproxSizeStr(static_cast<double>(bytes), precision, space, bytesWithPrecision);
 }
 
 
@@ -892,6 +939,14 @@ UNIT_TEST(getPreciseSizeStr)
     ASSERT_EQ(getPreciseSizeStr(7*1024*1024), "7 MB");
     ASSERT_EQ(getPreciseSizeStr(7ull*1024*1024*1024), "7 GB");
     ASSERT_EQ(getPreciseSizeStr(7ull*1024*1024*1024*1024), "7 TB");
+
+    uint64_t factor = 0;
+    ASSERT_EQ(getPreciseSizeStr(0, &factor), "0 bytes");
+    ASSERT_EQ(factor, 1ULL);
+    ASSERT_EQ(getPreciseSizeStr(1024, &factor), "1 kB");
+    ASSERT_EQ(factor, 1024ULL);
+    ASSERT_EQ(getPreciseSizeStr(1024 * 1024, &factor), "1 MB");
+    ASSERT_EQ(factor, 1024ULL * 1024ULL);
 }
 
 
@@ -985,6 +1040,7 @@ size_t getFileSize(const std::string& filename)
     }
     else if (S_ISBLK(st.st_mode) || S_ISCHR(st.st_mode)) // Block or character device (e.g., /dev/disk16).
     {
+#ifdef __APPLE__
         uint64_t blockCount = 0;
         uint32_t blockSize = 0;
 
@@ -1000,6 +1056,9 @@ size_t getFileSize(const std::string& filename)
         }
 
         size = size_t(blockCount * blockSize);
+#else
+        size = size_t(st.st_size);
+#endif
     }
     else
     {

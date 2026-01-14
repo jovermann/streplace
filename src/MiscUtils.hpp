@@ -241,7 +241,12 @@ constexpr std::string_view typeName()
 std::string secondsToString(double seconds);
 
 /// Format size into string with bytes, kB, MB, GB ... suffix.
-std::string getPreciseSizeStr(size_t size);
+std::string getPreciseSizeStr(size_t size, uint64_t* factor = nullptr);
+
+/// Format size into string with bytes, kB, MB, GB ... suffix, using a fixed precision.
+/// If bytesWithPrecision is false, the "bytes" unit is printed without decimals.
+std::string getApproxSizeStr(double bytes, unsigned precision = 1, bool space = true, bool bytesWithPrecision = true);
+std::string getApproxSizeStr(uint64_t bytes, unsigned precision = 1, bool space = true, bool bytesWithPrecision = false);
 
 /// Get largest power of two multiple of size.
 size_t getLargestPowerOfTwoFactor(size_t size);

@@ -13,6 +13,7 @@
 #include <functional>
 #include <iostream>
 #include <cassert>
+#include <cstring>
 #include "CommandLineParser.hpp"
 
 namespace ut1
