@@ -12,7 +12,7 @@ def streplace_bin() -> Path:
     return Path(os.environ.get("STREPLACE_BIN", repo_root / "streplace"))
 
 
-def run_streplace(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+def _ensure_streplace(cwd: Path) -> Path:
     bin_path = streplace_bin()
     if "STREPLACE_BIN" not in os.environ:
         subprocess.run(["make"], cwd=cwd, check=True, capture_output=True, text=True)
@@ -20,10 +20,26 @@ def run_streplace(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str
         subprocess.run(["make"], cwd=cwd, check=True, capture_output=True, text=True)
         if not bin_path.exists():
             raise FileNotFoundError(f"streplace binary not found after make: {bin_path}")
+    return bin_path
+
+
+def run_streplace(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    bin_path = _ensure_streplace(cwd)
     return subprocess.run(
         [str(bin_path)] + args,
         cwd=cwd,
         check=True,
+        capture_output=True,
+        text=True,
+    )
+
+
+def run_streplace_result(args: list[str], cwd: Path) -> subprocess.CompletedProcess[str]:
+    bin_path = _ensure_streplace(cwd)
+    return subprocess.run(
+        [str(bin_path)] + args,
+        cwd=cwd,
+        check=False,
         capture_output=True,
         text=True,
     )
@@ -172,6 +188,76 @@ def test_preview_full_file_context(tmp_path: Path) -> None:
     result = run_streplace(["-P", "--context=-1", "foo=bar", str(target)], streplace.parent)
     assert "aaa" in result.stdout
     assert "bbb" in result.stdout
+
+
+def test_error_on_multiple_separators(tmp_path: Path) -> None:
+    streplace = streplace_bin()
+    target = tmp_path / "t.txt"
+    target.write_text("foo\n", encoding="utf-8")
+
+    result = run_streplace_result(["foo=bar=baz", str(target)], streplace.parent)
+    assert result.returncode != 0
+    assert "must contain exactly one separator" in result.stdout
+
+
+def test_error_on_empty_equals(tmp_path: Path) -> None:
+    streplace = streplace_bin()
+    target = tmp_path / "t.txt"
+    target.write_text("foo\n", encoding="utf-8")
+
+    result = run_streplace_result(["--equals=", "foo=bar", str(target)], streplace.parent)
+    assert result.returncode != 0
+    assert "--equals must not be empty" in result.stdout
+
+
+def test_error_on_conflicting_rename_options(tmp_path: Path) -> None:
+    streplace = streplace_bin()
+    target = tmp_path / "foo.txt"
+    target.write_text("foo\n", encoding="utf-8")
+
+    result = run_streplace_result(["-A", "-N", "foo=bar", str(target)], streplace.parent)
+    assert result.returncode != 0
+    assert "cannot be combined" in result.stdout
+
+
+def test_error_on_modify_symlinks_with_rename(tmp_path: Path) -> None:
+    streplace = streplace_bin()
+    target = tmp_path / "foo.txt"
+    target.write_text("foo\n", encoding="utf-8")
+
+    result = run_streplace_result(["-s", "-A", "foo=bar", str(target)], streplace.parent)
+    assert result.returncode != 0
+    assert "cannot be combined" in result.stdout
+
+
+def test_rename_recursive_rename_and_modify(tmp_path: Path) -> None:
+    streplace = streplace_bin()
+    root = tmp_path / "root"
+    src_dir = root / "foo_dir"
+    src_dir.mkdir(parents=True)
+    src_file = src_dir / "foo.txt"
+    src_file.write_text("foo\n", encoding="utf-8")
+
+    run_streplace(["-A", "-r", "foo=bar", str(root)], streplace.parent)
+    renamed_dir = root / "bar_dir"
+    renamed_file = renamed_dir / "bar.txt"
+    assert not src_dir.exists()
+    assert renamed_file.read_text(encoding="utf-8") == "bar\n"
+
+
+def test_rename_recursive_rename_only(tmp_path: Path) -> None:
+    streplace = streplace_bin()
+    root = tmp_path / "root"
+    src_dir = root / "foo_dir"
+    src_dir.mkdir(parents=True)
+    src_file = src_dir / "foo.txt"
+    src_file.write_text("foo\n", encoding="utf-8")
+
+    run_streplace(["-N", "-r", "foo=bar", str(root)], streplace.parent)
+    renamed_dir = root / "bar_dir"
+    renamed_file = renamed_dir / "bar.txt"
+    assert not src_dir.exists()
+    assert renamed_file.read_text(encoding="utf-8") == "foo\n"
 
 
 def test_recursive_processing(tmp_path: Path) -> None:
