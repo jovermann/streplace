@@ -7,6 +7,7 @@
 #include <regex>
 #include <iostream>
 #include <filesystem>
+#include <set>
 #include <utility>
 #include "CommandLineParser.hpp"
 #include "MiscUtils.hpp"
@@ -84,6 +85,7 @@ public:
         recursive   = cl("recursive");
         followLinks = cl("follow-links");
         all         = cl("all");
+        ignoreErrors = cl("ignore-errors");
 
         ignoreCase = cl("ignore-case");
         noRegex    = cl("no-regex");
@@ -135,6 +137,37 @@ public:
         {
             throw Error("--dollar must not be empty");
         }
+
+        static constexpr const char* kHtmlExts = "html,htm,shtml,dhtml";
+        static constexpr const char* kCExts = "c,cc,C,cxx,cpp,h,hh,H,hxx,hpp,i,inc,m,mm,M";
+        std::vector<std::string> onlyArgs = cl.getList("only");
+        if (cl("html-only"))
+        {
+            onlyArgs.emplace_back(kHtmlExts);
+        }
+        if (cl("c-only"))
+        {
+            onlyArgs.emplace_back(kCExts);
+        }
+        for (const auto& list : onlyArgs)
+        {
+            for (std::string ext : ut1::splitString(list, ','))
+            {
+                if (ext.empty())
+                {
+                    continue;
+                }
+                if (ext.front() == '.')
+                {
+                    ext.erase(0, 1);
+                }
+                ext = ut1::tolower(ext);
+                if (!ext.empty())
+                {
+                    onlyExts.insert(std::move(ext));
+                }
+            }
+        }
     }
 
     /// Add rule.
@@ -156,45 +189,70 @@ public:
     /// Process directory entry (rename and modify content).
     void processDirectoryEntry(std::filesystem::directory_entry& directoryEntry)
     {
-        // Rename files and dirs.
-        if (rename)
+        try
         {
-            std::filesystem::path oldPath = directoryEntry.path();
-            std::filesystem::path basePath = oldPath.parent_path();
-            std::string oldName = oldPath.filename().string();
-            std::string newName = applyAllRules(oldName);
-            if (oldName != newName)
+            if (directoryEntry.is_regular_file() && !isAllowedExtension(directoryEntry.path()))
             {
-                std::filesystem::path newPath = basePath / newName;
-                if (verbose)
+                if (verbose >= 2)
                 {
-                    std::cout << "Renaming " << oldPath.string() << " -> " << newPath.string() << ".\n";
+                    std::cout << "Ignoring file " << directoryEntry.path().string() << ".\n";
                 }
-                if (!dummyMode)
+                numIgnored++;
+                return;
+            }
+
+            // Rename files and dirs.
+            if (rename)
+            {
+                std::filesystem::path oldPath = directoryEntry.path();
+                std::filesystem::path basePath = oldPath.parent_path();
+                std::string oldName = oldPath.filename().string();
+                std::string newName = applyAllRules(oldName);
+                if (oldName != newName)
                 {
-                    std::filesystem::rename(oldPath, newPath);
-                    directoryEntry.replace_filename(newName);
+                    std::filesystem::path newPath = basePath / newName;
+                    if (verbose)
+                    {
+                        std::cout << "Renaming " << oldPath.string() << " -> " << newPath.string() << ".\n";
+                    }
+                    if (!dummyMode)
+                    {
+                        std::filesystem::rename(oldPath, newPath);
+                        directoryEntry.replace_filename(newName);
+                    }
+                    numDirsRenamed++;
                 }
-                numDirsRenamed++;
+            }
+
+            // Process content.
+            if ((!followLinks) && directoryEntry.is_symlink())
+            {
+                processSymlink(directoryEntry);
+            }
+            else if (directoryEntry.is_regular_file())
+            {
+                processRegularFile(directoryEntry);
+            }
+            else if (directoryEntry.is_directory())
+            {
+                processDirectory(directoryEntry);
+            }
+            else
+            {
+                processOther(directoryEntry);
             }
         }
-
-        // Process content.
-        if ((!followLinks) && directoryEntry.is_symlink())
+        catch (const std::exception& e)
         {
-            processSymlink(directoryEntry);
-        }
-        else if (directoryEntry.is_regular_file())
-        {
-            processRegularFile(directoryEntry);
-        }
-        else if (directoryEntry.is_directory())
-        {
-            processDirectory(directoryEntry);
-        }
-        else
-        {
-            processOther(directoryEntry);
+            if (!ignoreErrors)
+            {
+                throw;
+            }
+            if (verbose)
+            {
+                std::cerr << "Skipping " << directoryEntry.path().string() << ": " << e.what() << "\n";
+            }
+            numIgnored++;
         }
     }
 
@@ -385,9 +443,25 @@ private:
 
             // Note: Take a copy of each directory_entry intentionally,
             // because we will potentially modify it (rename) in processDirectoryEntry.
-            for (std::filesystem::directory_entry entry: std::filesystem::directory_iterator(directoryEntry))
+            try
             {
-                processDirectoryEntry(entry);
+                for (std::filesystem::directory_entry entry: std::filesystem::directory_iterator(directoryEntry))
+                {
+                    processDirectoryEntry(entry);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                if (!ignoreErrors)
+                {
+                    throw;
+                }
+                if (verbose)
+                {
+                    std::cerr << "Skipping dir " << directoryEntry.path().string() << ": " << e.what() << "\n";
+                }
+                numIgnored++;
+                return;
             }
 
             numDirsProcessed++;
@@ -423,6 +497,22 @@ private:
         }
 
         return false;
+    }
+
+    /// Return true if the file extension is allowed.
+    bool isAllowedExtension(const std::filesystem::path& path) const
+    {
+        if (onlyExts.empty())
+        {
+            return true;
+        }
+        std::string ext = path.extension().string();
+        if (!ext.empty() && ext.front() == '.')
+        {
+            ext.erase(0, 1);
+        }
+        ext = ut1::tolower(ext);
+        return onlyExts.find(ext) != onlyExts.end();
     }
 
     /// Replace single match.
@@ -516,6 +606,7 @@ private:
     bool recursive{};
     bool followLinks{};
     bool all{};
+    bool ignoreErrors{};
 
     unsigned verbose{};
     bool     dummyMode{};
@@ -536,6 +627,7 @@ private:
     bool wholeWords{};
     std::string equals;
     std::string dollar;
+    std::set<std::string> onlyExts;
 
     /// Statistics.
     uint64_t numIgnored{};
@@ -574,6 +666,10 @@ int main(int argc, char* argv[])
     cl.addHeader("\nFile options:\n");
     cl.addOption('r', "recursive", "Recursively process directories.");
     cl.addOption('l', "follow-links", "Follow symbolic links.");
+    cl.addOption('o', "only", "Process only files with extension in comma separated LIST (multiple allowed).", "LIST").listOption();
+    cl.addOption('H', "html-only", "Process only HTML-related file extensions.");
+    cl.addOption('C', "c-only", "Process only C/C++ related file extensions.");
+    cl.addOption('E', "ignore-errors", "Skip files/directories that can't be read/written/renamed.");
     cl.addOption(' ', "all", "Process all files and directories. By default '.git' directories are skipped.");
 
     cl.addHeader("\nMatching options:\n");
