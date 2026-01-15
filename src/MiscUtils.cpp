@@ -890,12 +890,12 @@ std::string getPreciseSizeStr(size_t size, uint64_t* factor)
     return std::format("{} {}", size, sizeStr[sizeStrIndex]);
 }
 
-std::string getApproxSizeStr(double bytes, unsigned precision, bool space, bool bytesWithPrecision)
+std::string getApproxSizeStr(double bytes, unsigned precision, bool space, bool bytesWithPrecision, bool shortBytes)
 {
     static const char *sizeStr[] = {"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
     if (bytes <= 0.0)
     {
-        return "0";
+        bytes = 0;
     }
     double value = bytes;
     size_t sizeStrIndex = 0;
@@ -920,13 +920,20 @@ std::string getApproxSizeStr(double bytes, unsigned precision, bool space, bool 
     {
         os << " ";
     }
-    os << sizeStr[sizeStrIndex];
+    if (shortBytes && sizeStrIndex == 0)
+    {
+        os << "B";
+    }
+    else
+    {
+        os << sizeStr[sizeStrIndex];
+    }
     return os.str();
 }
 
-std::string getApproxSizeStr(uint64_t bytes, unsigned precision, bool space, bool bytesWithPrecision)
+std::string getApproxSizeStr(uint64_t bytes, unsigned precision, bool space, bool bytesWithPrecision, bool shortBytes)
 {
-    return getApproxSizeStr(static_cast<double>(bytes), precision, space, bytesWithPrecision);
+    return getApproxSizeStr(static_cast<double>(bytes), precision, space, bytesWithPrecision, shortBytes);
 }
 
 
