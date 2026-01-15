@@ -529,7 +529,13 @@ private:
         }
 
         // Format according to rhs and return replacement string.
-        std::string r = match.format(rule.rhs);
+        std::string fmt = rule.rhs;
+        if (dollar != "$")
+        {
+            ut1::replaceStringInPlace(fmt, "$", "$$");
+            ut1::replaceStringInPlace(fmt, dollar, "$");
+        }
+        std::string r = match.format(fmt);
         if (preview)
         {
             r = escapeSequences.bold + r + escapeSequences.normal;
@@ -545,7 +551,7 @@ private:
     {
         size_t numMatches = 0;
 
-        s = ut1::regex_replace(s, std::regex(rule.lhs), [&](const std::smatch& match)
+        s = ut1::regex_replace(s, std::regex(rule.lhs, regexFlags), [&](const std::smatch& match)
             { return replaceMatch(match, rule, numMatches); });
 
         rule.numMatches += numMatches;

@@ -38,7 +38,8 @@ unit_test: $(OBJECTS)
 	$(CXX) $^ -o $@
 	./unit_test
 
-test: unit_test
+test: $(TARGET)
+	pytest
 
 format:
 	clang-format -i --style=file src/*.hpp src/*.cpp
