@@ -17,6 +17,7 @@
 #include "MiscUtils.hpp"
 #include "UnitTest.hpp"
 #include <iostream>
+#include <array>
 #include <chrono>
 #include <format>
 #include <iomanip>
@@ -859,11 +860,7 @@ std::ostream& operator<<(std::ostream& s, const std::vector<std::string>& v)
 
 std::ostream& flushTty(std::ostream& os)
 {
-    static int stdoutIsATty = -1;
-    if (stdoutIsATty < 0)
-    {
-        stdoutIsATty = !!isatty(1);
-    }
+    static const bool stdoutIsATty = bool(isatty(1));
 
     // Do not flush stdout if os is not stdout.
     if (os.rdbuf() != std::cout.rdbuf())
@@ -910,7 +907,7 @@ std::string secondsToString(double seconds)
 
 std::string getPreciseSizeStr(size_t size, uint64_t* factor)
 {
-    static const char *sizeStr[] = {"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
+    static constexpr std::array sizeStr{"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
     size_t sizeStrIndex = 0;
     uint64_t unitFactor = 1;
     if (size == 1)
@@ -934,9 +931,9 @@ std::string getPreciseSizeStr(size_t size, uint64_t* factor)
     return std::format("{} {}", size, sizeStr[sizeStrIndex]);
 }
 
-std::string getApproxSizeStr(double bytes, unsigned precision, bool space, bool bytesWithPrecision, bool shortBytes)
+std::string getApproxSizeStr(double bytes, const unsigned precision, const bool space, const bool bytesWithPrecision, const bool shortBytes)
 {
-    static const char *sizeStr[] = {"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
+    static constexpr std::array sizeStr{"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
     if (bytes <= 0.0)
     {
         bytes = 0;
