@@ -20,6 +20,7 @@
 #include <chrono>
 #include <format>
 #include <iomanip>
+#include <utility>
 
 
 namespace ut1
@@ -556,7 +557,7 @@ UNIT_TEST(splitLines)
 
 std::string joinStrings(const std::vector<std::string>& stringList, const std::string& sep)
 {
-    std::stringstream r;
+    std::ostringstream r;
     if (!stringList.empty())
     {
         r << stringList[0];
@@ -565,7 +566,7 @@ std::string joinStrings(const std::vector<std::string>& stringList, const std::s
             r << sep << stringList[i];
         }
     }
-    return r.str();
+    return std::move(r).str();
 }
 
 
@@ -972,7 +973,7 @@ std::string getApproxSizeStr(double bytes, unsigned precision, bool space, bool 
     {
         os << sizeStr[sizeStrIndex];
     }
-    return os.str();
+    return std::move(os).str();
 }
 
 std::string getApproxSizeStr(uint64_t bytes, unsigned precision, bool space, bool bytesWithPrecision, bool shortBytes)
