@@ -267,7 +267,7 @@ void writeFile(const std::string& filename, const std::string& data);
 size_t getFileSize(const std::string& filename);
 
 /// File type.
-enum FileType { FT_REGULAR, FT_DIR, FT_SYMLINK, FT_FIFO, FT_BLOCK, FT_CHAR, FT_SOCKET, FT_NON_EXISTING };
+enum class FileType { REGULAR, DIR, SYMLINK, FIFO, BLOCK, CHAR, SOCKET, NON_EXISTING };
 
 /// Get file type.
 FileType getFileType(const std::filesystem::directory_entry& entry, bool followSymlinks = true);

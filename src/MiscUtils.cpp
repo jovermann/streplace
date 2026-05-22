@@ -1155,36 +1155,36 @@ FileType getFileType(const std::filesystem::directory_entry& entry, bool followS
         // Report broken symlinks as symlink, even  when when following symlinks.
         if ((!followSymlinks) || (!entry.exists()))
         {
-            return FT_SYMLINK;
+            return FileType::SYMLINK;
         }
     }
     if (entry.is_regular_file())
     {
-        return FT_REGULAR;
+        return FileType::REGULAR;
     }
     else if (entry.is_directory())
     {
-        return FT_DIR;
+        return FileType::DIR;
     }
     else if (entry.is_fifo())
     {
-        return FT_FIFO;
+        return FileType::FIFO;
     }
     else if (entry.is_block_file())
     {
-        return FT_BLOCK;
+        return FileType::BLOCK;
     }
     else if (entry.is_character_file())
     {
-        return FT_CHAR;
+        return FileType::CHAR;
     }
     else if (entry.is_socket())
     {
-        return FT_SOCKET;
+        return FileType::SOCKET;
     }
     else
     {
-        return FT_NON_EXISTING;
+        return FileType::NON_EXISTING;
     }
 }
 
@@ -1197,36 +1197,36 @@ FileType getFileType(const std::filesystem::path& entry, bool followSymlinks)
         // Report broken symlinks as symlink, even when following symlinks.
         if ((!followSymlinks) || (!std::filesystem::exists(entry)))
         {
-            return FT_SYMLINK;
+            return FileType::SYMLINK;
         }
     }
     if (std::filesystem::is_regular_file(entry))
     {
-        return FT_REGULAR;
+        return FileType::REGULAR;
     }
     else if (std::filesystem::is_directory(entry))
     {
-        return FT_DIR;
+        return FileType::DIR;
     }
     else if (std::filesystem::is_fifo(entry))
     {
-        return FT_FIFO;
+        return FileType::FIFO;
     }
     else if (std::filesystem::is_block_file(entry))
     {
-        return FT_BLOCK;
+        return FileType::BLOCK;
     }
     else if (std::filesystem::is_character_file(entry))
     {
-        return FT_CHAR;
+        return FileType::CHAR;
     }
     else if (std::filesystem::is_socket(entry))
     {
-        return FT_SOCKET;
+        return FileType::SOCKET;
     }
     else
     {
-        return FT_NON_EXISTING;
+        return FileType::NON_EXISTING;
     }
 }
 
@@ -1244,14 +1244,15 @@ std::string getFileTypeStr(FileType fileType)
 {
     switch (fileType)
     {
-    case FT_REGULAR: return "file";
-    case FT_DIR: return "dir";
-    case FT_SYMLINK: return "symlink";
-    case FT_FIFO: return "fifo";
-    case FT_BLOCK: return "block-device";
-    case FT_CHAR: return "char-device";
-    case FT_SOCKET: return "socket";
-    case FT_NON_EXISTING: return "non-existing";
+    using enum FileType;
+    case REGULAR: return "file";
+    case DIR: return "dir";
+    case SYMLINK: return "symlink";
+    case FIFO: return "fifo";
+    case BLOCK: return "block-device";
+    case CHAR: return "char-device";
+    case SOCKET: return "socket";
+    case NON_EXISTING: return "non-existing";
     default: return "unknown-file-type";
     }
 }
@@ -1263,12 +1264,12 @@ bool fsExists(const std::filesystem::path& entry)
 
 bool fsIsDirectory(const std::filesystem::path& entry, bool followSymlinks)
 {
-    return getFileType(entry, followSymlinks) == FT_DIR;
+    return getFileType(entry, followSymlinks) == FileType::DIR;
 }
 
 bool fsIsRegular(const std::filesystem::path& entry, bool followSymlinks)
 {
-    return getFileType(entry, followSymlinks) == FT_REGULAR;
+    return getFileType(entry, followSymlinks) == FileType::REGULAR;
 }
 
 StatInfo::StatInfo()
