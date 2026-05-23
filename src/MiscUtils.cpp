@@ -931,7 +931,7 @@ std::string getPreciseSizeStr(size_t size, uint64_t* factor)
     return std::format("{} {}", size, sizeStr[sizeStrIndex]);
 }
 
-std::string getApproxSizeStr(double bytes, const unsigned precision, const bool space, const bool bytesWithPrecision, const bool shortBytes)
+std::string getApproxSizeStr(double bytes, unsigned precision, bool space, bool bytesWithPrecision, bool shortBytes)
 {
     static constexpr std::array sizeStr{"bytes", "kB", "MB", "GB", "TB", "PB", "EB"};
     if (bytes <= 0.0)
