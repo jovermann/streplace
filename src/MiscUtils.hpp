@@ -94,7 +94,7 @@ std::string toNfd(const std::string& s);
 
 /// Convert string to uint64_t.
 /// The prefix 0x indicates hex, else dec.
-/// The suffixes k, M, G, T, P, E are supported for powers of 1024.
+/// The suffixes k, M, G, T, P, E are supported for powers of 1024 and are case-insensitive.
 uint64_t strToU64(const std::string& s);
 
 /// Convert comma separated list of integers to vector.

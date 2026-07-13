@@ -802,24 +802,31 @@ UNIT_TEST(toNfd)
 
 uint64_t strToU64(const std::string& s)
 {
+    static constexpr std::string_view supportedSuffixes = "k, M, G, T, P, E";
     size_t pos = 0;
     uint64_t r = std::stoull(s, &pos, 0);
     if (pos < s.length())
     {
         if (pos != s.length() - 1)
         {
-            throw std::runtime_error("Syntax error in integer (suffix too long)!");
+            throw std::runtime_error(std::format("Syntax error in integer (suffix too long)! Supported suffixes: {} (case-insensitive).", supportedSuffixes));
         }
         switch (s[pos])
         {
+            case 'K':
             case 'k': r <<= 10; break;
+            case 'm':
             case 'M': r <<= 20; break;
+            case 'g':
             case 'G': r <<= 30; break;
+            case 't':
             case 'T': r <<= 40; break;
+            case 'p':
             case 'P': r <<= 50; break;
+            case 'e':
             case 'E': r <<= 60; break;
             default:
-                throw std::runtime_error("Syntax error in integer (unknown unit)!");
+                throw std::runtime_error(std::format("Syntax error in integer (unknown unit)! Supported suffixes: {} (case-insensitive).", supportedSuffixes));
         }
     }
     return r;
@@ -830,7 +837,11 @@ UNIT_TEST(strToU64)
     ASSERT_EQ(ut1::strToU64("0"), 0ull);
     ASSERT_EQ(ut1::strToU64("42"), 42ull);
     ASSERT_EQ(ut1::strToU64("4k"), 4096ull);
+    ASSERT_EQ(ut1::strToU64("4K"), 4096ull);
+    ASSERT_EQ(ut1::strToU64("2m"), 2*1024*1024ull);
     ASSERT_EQ(ut1::strToU64("2M"), 2*1024*1024ull);
+    ASSERT_EQ(ut1::strToU64("3g"), 3ull*1024*1024*1024);
+    ASSERT_EQ(ut1::strToU64("3G"), 3ull*1024*1024*1024);
 }
 
 UNIT_TEST(csvIntegersToVector)
