@@ -14,8 +14,13 @@
 #ifdef __APPLE__
 #include <sys/disk.h> // for DKIOCGETBLOCKCOUNT and DKIOCGETBLOCKSIZE
 #endif
+#ifdef __linux__
+#include <linux/fs.h> // for BLKGETSIZE64
+#endif
 #include "MiscUtils.hpp"
 #include "UnitTest.hpp"
+#include <cerrno>
+#include <cstring>
 #include <iostream>
 #include <array>
 #include <chrono>
@@ -1114,7 +1119,16 @@ size_t getFileSize(const std::string& filename)
     }
     else if (S_ISBLK(st.st_mode) || S_ISCHR(st.st_mode)) // Block or character device (e.g., /dev/disk16).
     {
-#ifdef __APPLE__
+#if defined(__linux__)
+        uint64_t deviceSize = 0;
+        if (::ioctl(fd, BLKGETSIZE64, &deviceSize) == -1)
+        {
+            const std::string error = std::strerror(errno);
+            ::close(fd);
+            throw std::runtime_error(std::format("getFileSize({}): ioctl BLKGETSIZE64 failed: {}.", filename, error));
+        }
+        size = size_t(deviceSize);
+#elif defined(__APPLE__)
         uint64_t blockCount = 0;
         uint32_t blockSize = 0;
 
