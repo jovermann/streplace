@@ -6,12 +6,23 @@ TARGET = streplace
 CPPFLAGS ?= -pedantic
 
 WARNING_FLAGS ?= -Weverything -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded -Wno-shorten-64-to-32 -Wno-missing-prototypes -Wno-sign-conversion -Wno-implicit-int-conversion -Wno-poison-system-directories -fcomment-block-commands=n -Wno-string-conversion -Wno-covered-switch-default -Wno-extra-semi-stmt
-CXXFLAGS ?= -Wall
 
 CXXSTD ?= -std=c++23
+BUILD ?= release
+CXXFLAGS_COMMON ?= -Wall
+CXXFLAGS_DEBUG ?= -O0 -g
+CXXFLAGS_RELEASE ?= -O3 -DNDEBUG
 
-BUILDDIR=build
-UNIT_TEST_BUILDDIR=build-unit-test
+ifeq ($(BUILD),debug)
+CXXFLAGS ?= $(CXXFLAGS_COMMON) $(CXXFLAGS_DEBUG)
+else ifeq ($(BUILD),release)
+CXXFLAGS ?= $(CXXFLAGS_COMMON) $(CXXFLAGS_RELEASE)
+else
+$(error Unknown BUILD='$(BUILD)', expected debug or release)
+endif
+
+BUILDDIR=build-$(BUILD)
+UNIT_TEST_BUILDDIR=build-unit-test-$(BUILD)
 SOURCES = $(wildcard src/*.cpp)
 OBJECTS = $(SOURCES:%.cpp=$(BUILDDIR)/%.o)
 DEPENDS := $(SOURCES:%.cpp=$(BUILDDIR)/%.d)
@@ -23,15 +34,15 @@ default: $(TARGET)
 $(TARGET): $(OBJECTS)
 	$(CXX) $^ -o $@
 
-build/%.o: %.cpp build/%.d
+$(BUILDDIR)/%.o: %.cpp $(BUILDDIR)/%.d
 	$(CXX) $(CXXSTD) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
         
-build/%.d: %.cpp Makefile
+$(BUILDDIR)/%.d: %.cpp Makefile
 	@mkdir -p $(@D)
 	$(CXX) $(CXXSTD) $(CPPFLAGS) -MM -MQ $@ $< -o $@
 
 clean:
-	rm -rf build $(UNIT_TEST_BUILDDIR) $(TARGET) unit_test
+	rm -rf build build-* build-unit-test $(TARGET) unit_test
 	find . -name '*~' -delete
 
 $(UNIT_TEST_BUILDDIR)/%.o: %.cpp $(UNIT_TEST_BUILDDIR)/%.d
@@ -60,7 +71,7 @@ tidy: $(TARGET)
 
 warnings:
 	$(MAKE) clean
-	$(MAKE) CXXFLAGS="$(WARNING_FLAGS)" $(TARGET)
+	$(MAKE) CXXFLAGS="$(CXXFLAGS_RELEASE) $(WARNING_FLAGS)" $(TARGET)
 
 .PHONY: clean default unit_test test format warnings
 
