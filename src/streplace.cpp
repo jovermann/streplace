@@ -2,7 +2,8 @@
 //
 // Copyright (c) 2021-2022 Johannes Overmann
 //
-// This file is released under the MIT license. See LICENSE for license.
+// Distributed under the Boost Software License, Version 1.0.
+// (See accompanying file LICENSE or copy at https://www.boost.org/LICENSE_1_0.txt)
 
 #include <regex>
 #include <iostream>
