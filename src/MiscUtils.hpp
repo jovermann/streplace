@@ -52,6 +52,9 @@ std::string replaceString(const std::string& s, const std::string& from, const s
 /// Expand unprintable chars to C-style backslash sequences.
 std::string expandUnprintable(const std::string& s, char quotes = 0, char addQuotes = 0);
 
+/// Escape terminal control characters while preserving valid printable UTF-8.
+std::string escapeTerminalText(std::string_view s);
+
 /// Compile C-style backslash sequences back to unprintable chars.
 std::string compileCString(const std::string& s, std::string* errorMessageOut = nullptr);
 
@@ -292,6 +295,9 @@ bool fsIsDirectory(const std::filesystem::path& entry, bool followSymlinks = tru
 
 /// Return true iff entry is a regular file.
 bool fsIsRegular(const std::filesystem::path& entry, bool followSymlinks = true);
+
+/// Return true when path resides on a known remote/network filesystem.
+bool isNetworkFilesystem(const std::filesystem::path& path) noexcept;
 
 /// File stat() info.
 /// This is only used to access stuff which is not accessible through std::filesystem::file_status (major/minor for block devices and st_dev/st_ino for inode identity (hardlink groups)).

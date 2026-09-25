@@ -11,11 +11,19 @@
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #endif
+#ifdef _WIN32
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+#include <windows.h>
+#endif
 #ifdef __APPLE__
 #include <sys/disk.h> // for DKIOCGETBLOCKCOUNT and DKIOCGETBLOCKSIZE
+#include <sys/mount.h>
 #endif
 #ifdef __linux__
 #include <linux/fs.h> // for BLKGETSIZE64
+#include <sys/vfs.h>
 #endif
 #include "MiscUtils.hpp"
 #include "UnitTest.hpp"
@@ -244,6 +252,108 @@ std::string expandUnprintable(const std::string& s, char quotes, char addQuotes)
     }
 
     return r;
+}
+
+std::string escapeTerminalText(std::string_view s)
+{
+    std::string result;
+    result.reserve(s.size());
+
+    auto appendHexByte = [&](unsigned char c)
+    {
+        char buf[5];
+        std::snprintf(buf, sizeof(buf), "\\x%02x", c);
+        result += buf;
+    };
+
+    for (size_t i = 0; i < s.size();)
+    {
+        unsigned char c = static_cast<unsigned char>(s[i]);
+        if (c < 0x80)
+        {
+            if (c >= 0x20 && c != 0x7f)
+            {
+                result += static_cast<char>(c);
+            }
+            else
+            {
+                switch (c)
+                {
+                case '\a': result += "\\a"; break;
+                case '\b': result += "\\b"; break;
+                case '\f': result += "\\f"; break;
+                case '\n': result += "\\n"; break;
+                case '\r': result += "\\r"; break;
+                case '\t': result += "\\t"; break;
+                case '\v': result += "\\v"; break;
+                default: appendHexByte(c); break;
+                }
+            }
+            i++;
+            continue;
+        }
+
+        size_t length = 0;
+        uint32_t codePoint = 0;
+        if (c >= 0xc2 && c <= 0xdf)
+        {
+            length = 2;
+            codePoint = c & 0x1f;
+        }
+        else if (c >= 0xe0 && c <= 0xef)
+        {
+            length = 3;
+            codePoint = c & 0x0f;
+        }
+        else if (c >= 0xf0 && c <= 0xf4)
+        {
+            length = 4;
+            codePoint = c & 0x07;
+        }
+
+        bool valid = length != 0 && i + length <= s.size();
+        for (size_t j = 1; valid && j < length; j++)
+        {
+            unsigned char continuation = static_cast<unsigned char>(s[i + j]);
+            valid = (continuation & 0xc0) == 0x80;
+            codePoint = (codePoint << 6) | (continuation & 0x3f);
+        }
+        if (valid)
+        {
+            valid = (length != 3 || codePoint >= 0x800)
+                 && (length != 4 || (codePoint >= 0x10000 && codePoint <= 0x10ffff))
+                 && !(codePoint >= 0xd800 && codePoint <= 0xdfff);
+        }
+
+        if (!valid)
+        {
+            appendHexByte(c);
+            i++;
+        }
+        else if (codePoint >= 0x80 && codePoint <= 0x9f)
+        {
+            char buf[7];
+            std::snprintf(buf, sizeof(buf), "\\u%04x", codePoint);
+            result += buf;
+            i += length;
+        }
+        else
+        {
+            result.append(s.substr(i, length));
+            i += length;
+        }
+    }
+    return result;
+}
+
+UNIT_TEST(escapeTerminalText)
+{
+    ASSERT_EQ(escapeTerminalText("plain filename.txt"), "plain filename.txt");
+    ASSERT_EQ(escapeTerminalText("back\\slash"), "back\\slash");
+    ASSERT_EQ(escapeTerminalText("line\nfeed\x1b[31m"), "line\\nfeed\\x1b[31m");
+    ASSERT_EQ(escapeTerminalText("Mäuse.txt"), "Mäuse.txt");
+    ASSERT_EQ(escapeTerminalText("c1\xc2\x9b"), "c1\\u009b");
+    ASSERT_EQ(escapeTerminalText(std::string("bad\x9b", 4)), "bad\\x9b");
 }
 
 
@@ -1319,6 +1429,60 @@ bool fsIsDirectory(const std::filesystem::path& entry, bool followSymlinks)
 bool fsIsRegular(const std::filesystem::path& entry, bool followSymlinks)
 {
     return getFileType(entry, followSymlinks) == FileType::REGULAR;
+}
+
+bool isNetworkFilesystem(const std::filesystem::path& path) noexcept
+{
+#ifdef _WIN32
+    try
+    {
+        std::error_code ec;
+        std::filesystem::path absolutePath = std::filesystem::absolute(path, ec);
+        if (ec)
+        {
+            return false;
+        }
+        std::wstring root = absolutePath.root_path().wstring();
+        return !root.empty() && GetDriveTypeW(root.c_str()) == DRIVE_REMOTE;
+    }
+    catch (...)
+    {
+        return false;
+    }
+#elif defined(__APPLE__)
+    struct statfs info{};
+    if (::statfs(path.c_str(), &info) != 0)
+    {
+        return false;
+    }
+    return (info.f_flags & MNT_LOCAL) == 0;
+#elif defined(__linux__)
+    struct statfs info{};
+    if (::statfs(path.c_str(), &info) != 0)
+    {
+        return false;
+    }
+    // Network filesystem magic values from linux/magic.h. FUSE is included
+    // because common remote filesystems such as sshfs are FUSE-backed.
+    switch (static_cast<unsigned long>(info.f_type))
+    {
+    case 0x00006969UL: // NFS_SUPER_MAGIC
+    case 0xff534d42UL: // CIFS_SUPER_MAGIC
+    case 0xfe534d42UL: // SMB2_SUPER_MAGIC
+    case 0x01021997UL: // V9FS_MAGIC
+    case 0x00c36400UL: // CEPH_SUPER_MAGIC
+    case 0x5346414fUL: // AFS_SUPER_MAGIC
+    case 0x73757245UL: // CODA_SUPER_MAGIC
+    case 0x0000564cUL: // NCP_SUPER_MAGIC
+    case 0x65735546UL: // FUSE_SUPER_MAGIC
+        return true;
+    default:
+        return false;
+    }
+#else
+    (void)path;
+    return false;
+#endif
 }
 
 StatInfo::StatInfo()
